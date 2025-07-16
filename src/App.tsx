@@ -156,7 +156,7 @@ function App() {
     setLoadingProgress(0);
 
     try {
-      const newMidiTracks = await parseMidiFile(file, project.timeSignature);
+      const newMidiTracks = await parseMidiFile(file, project);
 
       if (newMidiTracks.length > 0) {
         const updatedTracks = [...project.tracks, ...newMidiTracks];
