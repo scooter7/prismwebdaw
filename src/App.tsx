@@ -1,18 +1,28 @@
 import {
-  Alignment,
-  Button,
-  Dialog,
-  DialogBody,
-  DialogFooter,
-  Drawer,
-  Menu,
-  MenuDivider,
-  MenuItem,
-  Navbar,
-  Popover,
-  ProgressBar,
-  TextArea,
-} from '@blueprintjs/core';
+  File,
+  Settings,
+  Pencil,
+  Construction,
+  Eye,
+  HelpCircle,
+  FilePlus,
+  FolderDown,
+  Save,
+  Copy,
+  Undo,
+  Redo,
+  Scissors,
+  ClipboardPaste,
+  Trash2,
+  Library,
+  Cog,
+  Book,
+  Github,
+  Bug,
+  Info,
+  X,
+  Music,
+} from 'lucide-react';
 import { Project } from './ui/Project';
 import { Project as ProjectObj } from './core/Project';
 import { createProject, loadProject, saveAsProject, saveProject } from './controller/Projects';
@@ -20,21 +30,42 @@ import { copy, cut, doDelete, paste, redo, undo } from './controller/Edit';
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from './core/Engine';
 import { BUFFER_SIZE, SAMPLE_RATE } from './core/Config';
-
-import styles from './App.module.css';
 import { AudioFileManager } from './core/AudioFileManager';
 import { AudioFileManagerContext, EngineContext } from './ui/Context';
+import { Button } from './components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from './components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from './components/ui/sheet';
 
 const audioContext = new AudioContext();
 
-// MIT License
 const LICENSE =
   'MIT License\n\nCopyright (c) 2023, 2024 Hans-Martin Will\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.';
 
-/**
- * Open the application documentation in a new window.
- * @returns false
- */
 function openDocumentation() {
   window.open('https://ai-music.github.io/webdaw-doc/', 'Documentation', 'width=800, height=600');
   return false;
@@ -48,10 +79,10 @@ function App() {
   const audioFileManager = useRef<AudioFileManager>(new AudioFileManager());
 
   const [project, setProject] = useState(initialProject);
-  const [tracks, setTracks] = useState(initialProject.tracks); // [TrackInterface]
+  const [tracks, setTracks] = useState(initialProject.tracks);
 
   const [loading, setLoading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0); // [0, 1]
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [confirmStopAudio, setConfirmStopAudio] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [mixerVisible, setMixerVisible] = useState(false);
@@ -98,184 +129,222 @@ function App() {
 
   return (
     <EngineContext.Provider value={engine.current}>
-      <Dialog title="About" icon="info-sign" isOpen={showAbout}>
-        <DialogBody>
-          <img src="logo-192.png" alt="WebDAW Logo" width="96" style={{ float: 'right' }} />
-          <p>Welcome to</p>
-          <h1>WebDAW</h1>
-          <p>Copyright &copy; 2023, 2024 Hans-Martin Will</p>
-          <p>
-            WebDAW is a digital audio workstation (DAW) that runs in the browser. It utilizes the{' '}
-            <a href="https://www.w3.org/TR/webaudio/" target="_blank" rel="noreferrer">
-              Web Audio API
-            </a>{' '}
-            for audio processing and the{' '}
-            <a href="https://www.w3.org/TR/webmidi/" target="_blank" rel="noreferrer">
-              Web MIDI API
-            </a>{' '}
-            for integration with MIDI instruments, which are supported in modern browsers (
-            <a
-              href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API#browser_compatibility"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Audio
-            </a>
-            ,{' '}
-            <a
-              href="https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API#browser_compatibility"
-              target="_blank"
-              rel="noreferrer"
-            >
-              MIDI
-            </a>
-            ).
-          </p>
-          <TextArea fill={true} small={true} rows={6}>
-            {LICENSE}
-          </TextArea>
-        </DialogBody>
-        <DialogFooter
-          actions={<Button intent="primary" text="Close" onClick={() => setShowAbout(false)} />}
-        />
+      <Dialog open={showAbout} onOpenChange={setShowAbout}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>About WebDAW</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center space-x-4">
+            <img src="logo-192.png" alt="WebDAW Logo" width="96" />
+            <div>
+              <p>Welcome to</p>
+              <h1 className="text-2xl font-bold">WebDAW</h1>
+              <p>Copyright &copy; 2023, 2024 Hans-Martin Will</p>
+            </div>
+          </div>
+          <DialogDescription>
+            WebDAW is a digital audio workstation (DAW) that runs in the browser.
+          </DialogDescription>
+          <textarea
+            readOnly
+            className="mt-4 w-full h-32 p-2 border rounded text-xs"
+            value={LICENSE}
+          />
+          <DialogFooter>
+            <Button onClick={() => setShowAbout(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
-      <Dialog title="Loading" icon="cloud-download" isOpen={loading}>
-        <DialogBody>
+
+      <Dialog open={loading}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading Project</DialogTitle>
+          </DialogHeader>
           <p>Please wait while the project is being loaded...</p>
-          <ProgressBar value={loadingProgress} />
-        </DialogBody>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-4">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full"
+              style={{ width: `${loadingProgress * 100}%` }}
+            ></div>
+          </div>
+        </DialogContent>
       </Dialog>
-      <Dialog title="Stop Audio" icon="warning-sign" isOpen={confirmStopAudio}>
-        <DialogBody>
-          <p>Proceeding with this action will stop all audio. Are you sure you want to continue?</p>
-        </DialogBody>
-        <DialogFooter
-          actions={
-            <>
-              <Button
-                intent="danger"
-                text="Yes"
-                onClick={() => {
-                  setConfirmStopAudio(false);
-                  continueChangeProject.current?.();
-                }}
-              />
-              <Button intent="primary" text="No" onClick={() => setConfirmStopAudio(false)} />
-            </>
-          }
-        />
+
+      <Dialog open={confirmStopAudio} onOpenChange={setConfirmStopAudio}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stop Audio?</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            Proceeding with this action will stop all audio. Are you sure you want to continue?
+          </DialogDescription>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmStopAudio(false)}>
+              No
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmStopAudio(false);
+                continueChangeProject.current?.();
+              }}
+            >
+              Yes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
-      <div className={styles.app}>
-        <Navbar style={{ flex: 0 }}>
-          <Navbar.Group align={Alignment.LEFT}>
-            <Navbar.Heading>WebDAW</Navbar.Heading>
-            <Navbar.Divider />
-            <Popover
-              content={
-                <Menu>
-                  <MenuItem
-                    icon="new-object"
-                    text="New Project"
-                    onClick={() => {
-                      changeProject(() => {
-                        engine.current.stop();
-                        project.audioFiles.forEach((audioFile) => {
-                          audioFileManager.current.unregisterAudioFile(audioFile);
-                        });
-                        createProject(audioFileManager.current, loadFiles);
+
+      <div className="h-screen max-h-screen w-screen flex flex-col bg-background text-foreground">
+        <nav className="flex items-center px-4 py-2 border-b">
+          <h1 className="text-xl font-bold mr-4">WebDAW</h1>
+          <div className="flex items-center space-x-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <File className="h-4 w-4 mr-2" />
+                  Project
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={() => {
+                    changeProject(() => {
+                      engine.current.stop();
+                      project.audioFiles.forEach((audioFile) => {
+                        audioFileManager.current.unregisterAudioFile(audioFile);
                       });
-                    }}
-                  />
-                  <MenuItem
-                    icon="cloud-download"
-                    text="Load..."
-                    onClick={() => {
-                      changeProject(() => {
-                        engine.current.stop();
-                        loadProject(audioFileManager.current);
-                      });
-                    }}
-                  />
-                  <MenuItem icon="cloud-upload" text="Save" onClick={saveProject} />
-                  <MenuItem icon="duplicate" text="Save As..." onClick={saveAsProject} />
-                </Menu>
-              }
-              placement="bottom"
-            >
-              <Button className="bp5-minimal" icon="projects" text="Project" />
-            </Popover>
-            <Popover
-              content={
-                <Menu>
-                  <MenuItem icon="undo" text="Undo" onClick={undo} />
-                  <MenuItem icon="redo" text="Redo" onClick={redo} />
-                  <MenuDivider />
-                  <MenuItem icon="cut" text="Cut" onClick={cut} />
-                  <MenuItem icon="duplicate" text="Copy" onClick={copy} />
-                  <MenuItem icon="insert" text="Paste" onClick={paste} />
-                  <MenuItem icon="delete" text="Delete" onClick={doDelete} />
-                </Menu>
-              }
-              placement="bottom"
-            >
-              <Button className="bp5-minimal" icon="edit" text="Edit" />
-            </Popover>
-            <Button className="bp5-minimal" icon="build" text="Tools" />
-            <Popover
-              content={
-                <Menu>
-                  <MenuItem
-                    icon="cloud"
-                    text={browserVisible ? 'Hide Library' : 'Show Library'}
-                    onClick={() => setBrowserVisible(!browserVisible)}
-                  />
-                  <MenuItem
-                    icon="settings"
-                    text={mixerVisible ? 'Hide Mixer' : 'Show Mixer'}
-                    onClick={() => setMixerVisible(!mixerVisible)}
-                  />
-                  <MenuItem
-                    icon="cog"
-                    text={showSettings ? 'Hide Settings' : 'Show Setting'}
-                    onClick={() => setShowSettings(!showSettings)}
-                  />
-                </Menu>
-              }
-              placement="bottom"
-            >
-              <Button className="bp5-minimal" icon="control" text="View" />
-            </Popover>
-            <Popover
-              content={
-                <Menu>
-                  <MenuItem
-                    icon="manual"
-                    text="Documentation"
-                    href="#"
-                    onClick={openDocumentation}
-                  />
-                  <MenuItem
-                    icon="git-repo"
-                    text="Github"
-                    href="https://github.com/ai-music/webdaw"
-                    target="_blank"
-                  />
-                  <MenuItem
-                    icon="issue"
-                    text="Report an issue"
+                      createProject(audioFileManager.current, loadFiles);
+                    });
+                  }}
+                >
+                  <FilePlus className="h-4 w-4 mr-2" />
+                  New Project
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    changeProject(() => {
+                      engine.current.stop();
+                      loadProject(audioFileManager.current);
+                    });
+                  }}
+                >
+                  <FolderDown className="h-4 w-4 mr-2" />
+                  Load...
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={saveProject}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={saveAsProject}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Save As...
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={undo}>
+                  <Undo className="h-4 w-4 mr-2" />
+                  Undo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={redo}>
+                  <Redo className="h-4 w-4 mr-2" />
+                  Redo
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={cut}>
+                  <Scissors className="h-4 w-4 mr-2" />
+                  Cut
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={copy}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={paste}>
+                  <ClipboardPaste className="h-4 w-4 mr-2" />
+                  Paste
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={doDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="ghost" size="sm">
+              <Construction className="h-4 w-4 mr-2" />
+              Tools
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setBrowserVisible(!browserVisible)}>
+                  <Library className="h-4 w-4 mr-2" />
+                  {browserVisible ? 'Hide Library' : 'Show Library'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setMixerVisible(!mixerVisible)}>
+                  <Music className="h-4 w-4 mr-2" />
+                  {mixerVisible ? 'Hide Mixer' : 'Show Mixer'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowSettings(!showSettings)}>
+                  <Cog className="h-4 w-4 mr-2" />
+                  {showSettings ? 'Hide Settings' : 'Show Setting'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Help
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={openDocumentation}>
+                  <Book className="h-4 w-4 mr-2" />
+                  Documentation
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="https://github.com/ai-music/webdaw" target="_blank" rel="noreferrer">
+                    <Github className="h-4 w-4 mr-2" />
+                    Github
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
                     href="https://github.com/ai-music/webdaw/issues"
                     target="_blank"
-                  />
-                  <MenuDivider />
-                  <MenuItem icon="info-sign" text="About" onClick={() => setShowAbout(true)} />
-                </Menu>
-              }
-              placement="bottom"
-            >
-              <Button className="bp5-minimal" icon="help" text="Help" />
-            </Popover>
-          </Navbar.Group>
-        </Navbar>
+                    rel="noreferrer"
+                  >
+                    <Bug className="h-4 w-4 mr-2" />
+                    Report an issue
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowAbout(true)}>
+                  <Info className="h-4 w-4 mr-2" />
+                  About
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </nav>
         <Project
           project={project}
           tracks={tracks}
@@ -286,13 +355,17 @@ function App() {
           setBrowserVisible={setBrowserVisible}
         />
       </div>
-      <Drawer
-        isOpen={showSettings}
-        position="right"
-        icon="cog"
-        title="Settings"
-        onClose={() => setShowSettings(false)}
-      ></Drawer>
+
+      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Settings</SheetTitle>
+            <SheetDescription>
+              Configure your application settings here.
+            </SheetDescription>
+          </SheetHeader>
+        </SheetContent>
+      </Sheet>
     </EngineContext.Provider>
   );
 }
