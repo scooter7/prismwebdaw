@@ -91,6 +91,14 @@ function App() {
 
   const continueChangeProject = useRef<() => void>();
 
+  const resumeAudio = () => {
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().then(() => {
+        console.log('AudioContext resumed successfully');
+      });
+    }
+  };
+
   useEffect(() => {
     initializeEngine(engine.current);
   }, []);
@@ -198,7 +206,10 @@ function App() {
         </DialogContent>
       </Dialog>
 
-      <div className="h-screen max-h-screen w-screen flex flex-col bg-background text-foreground">
+      <div
+        className="h-screen max-h-screen w-screen flex flex-col bg-background text-foreground"
+        onClick={resumeAudio}
+      >
         <nav className="flex items-center px-4 py-2 border-b">
           <h1 className="text-xl font-bold mr-4">WebDAW</h1>
           <div className="flex items-center space-x-2">
