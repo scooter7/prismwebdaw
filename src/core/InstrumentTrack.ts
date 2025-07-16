@@ -1,16 +1,14 @@
 import { AudioEffect } from './AudioEffect';
 import { AudioFileResolver } from './AudioFile';
-import { JSONObject, JSONValue, Location, LocationToTime } from './Common';
+import { JSONObject, JSONValue, Location, LocationToTime, assert } from './Common';
 import { Instrument } from './Instrument';
+import { MidiDataType, NoteMidiData } from './MidiData';
 import { MidiEffect } from './MidiEffect';
 import { MidiRegion } from './MidiRegion';
 import { AbstractTrack } from './Track';
 
-// TODO: Currently, we have duplication of the AudioState and associated member function
-// implementations between InstrumentTrack and AudioTrack. We should refactor this to
-// avoid the duplication.
-
 type AudioState = {
+  channelStripInput: GainNode;
   panner: StereoPannerNode;
   gain: GainNode;
 };
@@ -62,20 +60,32 @@ export class InstrumentTrack extends AbstractTrack {
 
   initializeAudio(context: AudioContext): void {
     if (this.audioState === null) {
+      const channelStripInput = context.createGain();
       const gain = context.createGain();
       const panner = context.createStereoPanner();
+
+      this.instrument.initialize(context);
+      this.instrument.connect(channelStripInput);
+
+      channelStripInput.connect(panner);
       panner.connect(gain);
       gain.connect(context.destination);
-      this.audioState = { gain, panner };
-    } else if (this.audioState.gain.context !== context) {
-      throw new Error('Audio nodes already initialized with a different audio context');
+
+      this.audioState = { channelStripInput, gain, panner };
+    } else {
+      assert(
+        this.audioState.gain.context === context,
+        'Audio nodes already initialized with a different audio context',
+      );
     }
   }
 
   deinitializeAudio(): void {
     if (this.audioState !== null) {
+      this.instrument.disconnect();
       this.audioState.gain.disconnect();
       this.audioState.panner.disconnect();
+      this.audioState.channelStripInput.disconnect();
       this.audioState = null;
     } else {
       throw new Error('Audio nodes not initialized');
@@ -121,11 +131,11 @@ export class InstrumentTrack extends AbstractTrack {
     continuationTime?: number,
     discontinuationTime?: number,
   ): void {
-    //throw new Error('Method not implemented.');
+    // Instrument tracks schedule MIDI which generates audio, so this is empty.
   }
 
   scheduleMidiEvents(
-    currentTime: number,
+    timeOffset: number,
     startTime: number,
     endTime: number,
     converter: LocationToTime,
@@ -133,7 +143,26 @@ export class InstrumentTrack extends AbstractTrack {
     continuationTime?: number,
     discontinuationTime?: number,
   ): void {
-    //throw new Error('Method not implemented.');
+    if (!this.enabled) {
+      return;
+    }
+
+    this.regions.forEach((region) => {
+      region.midiData.forEach((midiEvent) => {
+        if (midiEvent.type === MidiDataType.Note) {
+          const note = midiEvent as NoteMidiData;
+          const noteStartTime = converter.convertLocation(note.start);
+          const timeSignature = converter.timeSignatureAtLocation(note.start);
+          const noteEndTime = converter.convertLocation(note.start.add(note.duration, timeSignature));
+
+          // Schedule notes that start within the current scheduling window
+          if (noteStartTime >= startTime && noteStartTime < endTime) {
+            this.instrument.noteOn(note.note, note.velocity, timeOffset + noteStartTime);
+            this.instrument.noteOff(note.note, timeOffset + noteEndTime);
+          }
+        }
+      });
+    });
   }
 
   adjustDiscontinuationTime(
@@ -145,5 +174,8 @@ export class InstrumentTrack extends AbstractTrack {
   ): void {}
 
   housekeeping(currentTime: number): void {}
-  stop(): void {}
+
+  stop(): void {
+    this.instrument.stopAll();
+  }
 }
