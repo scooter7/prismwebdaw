@@ -1,4 +1,4 @@
-import { Duration } from './Common';
+import { Duration, Location } from './Common';
 
 /**
  * Discriminator for MIDI data types; it's not a true 1-to-1 mapping of MIDI data types, for example,
