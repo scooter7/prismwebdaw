@@ -1,9 +1,4 @@
 {
-  "name": "webdaw",
-  "version": "0.1.0",
-  "homepage": "https://ai-music.github.io/webdaw",
-  "private": true,
-  "main": "public/main.js",
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@blueprintjs/core": "^5.7.1",
@@ -18,7 +13,6 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "@types/gapi": "^0.0.47",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.62",
     "@types/react": "^18.2.39",
@@ -26,8 +20,6 @@
     "@uiw/react-color-compact": "^2.0.5",
     "data-structure-typed": "^1.50.2",
     "directory-tree": "^3.5.1",
-    "electron": "^28.0.0",
-    "gapi-script": "^1.2.0",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -35,35 +27,6 @@
     "typescript": "^4.9.5",
     "use-force-update": "^1.0.11",
     "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "docs": "typedoc --out docs src",
-    "eject": "react-scripts eject",
-    "electron-dev": "electron ."
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest",
-      "plugin:prettier/recommended"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
