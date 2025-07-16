@@ -160,8 +160,10 @@ function App() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Loading Project</DialogTitle>
+            <DialogDescription>
+              Please wait while the project is being loaded...
+            </DialogDescription>
           </DialogHeader>
-          <p>Please wait while the project is being loaded...</p>
           <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-4">
             <div
               className="bg-blue-600 h-2.5 rounded-full"

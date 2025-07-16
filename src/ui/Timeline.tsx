@@ -471,6 +471,7 @@ export const Timeline: FunctionComponent<TimelineProps> = (props: TimelineProps)
             {Array.from(labelIterator).map((location) => {
               return (
                 <div
+                  key={`label-${location.bar}-${location.beat}-${location.tick}`}
                   className={styles.timelineMajorTick}
                   style={{
                     left: `${
@@ -487,6 +488,7 @@ export const Timeline: FunctionComponent<TimelineProps> = (props: TimelineProps)
             {Array.from(tickIterator).map((location) => {
               return (
                 <div
+                  key={`tick-${location.bar}-${location.beat}-${location.tick}`}
                   className={styles.timelineTick}
                   style={{
                     left: `${
