@@ -27,7 +27,7 @@ import { Browser } from './Browser';
 import { EngineContext } from './Context';
 import { AudioFile } from '../core/AudioFile';
 import { AudioRegion } from '../core/AudioRegion';
-import { clone } from 'lodash';
+import { cloneDeep } from 'lodash';
 
 export type ProjectProps = {
   project: ProjectObj;
@@ -242,7 +242,19 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
       track: props.project.tracks[trackIndex],
       region: region,
     });
-    props.setTracks(clone(props.project.tracks));
+    props.setTracks(cloneDeep(props.project.tracks));
+  }
+
+  function handleMoveRegion(trackIndex: number, regionIndex: number, newPosition: Location) {
+    // TODO: Add overlap logic
+    props.project.tracks[trackIndex].regions[regionIndex].position = newPosition;
+    props.setTracks(cloneDeep(props.project.tracks));
+  }
+
+  function handleResizeRegion(trackIndex: number, regionIndex: number, newLength: Duration) {
+    // TODO: Add overlap logic
+    props.project.tracks[trackIndex].regions[regionIndex].length = newLength;
+    props.setTracks(cloneDeep(props.project.tracks));
   }
 
   //
@@ -324,6 +336,8 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           setEnd={changeEnd}
           looping={looping}
           setLooping={changeLooping}
+          onMoveRegion={handleMoveRegion}
+          onResizeRegion={handleResizeRegion}
         />
       </div>
       <div>

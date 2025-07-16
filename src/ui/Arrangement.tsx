@@ -15,6 +15,7 @@ import {
   TRACK_HEIGHT_PX,
 } from './Config';
 import { Button, ButtonGroup } from '@blueprintjs/core';
+import { Duration, Location } from '../core/Common';
 
 /**
  * Properties required to render the Arrangement component.
@@ -27,6 +28,8 @@ export interface ArrangementProps extends TimelineProps {
   deleteTrack: (index: number) => void;
   totalWidth: number;
   totalHeight: number;
+  onMoveRegion: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
+  onResizeRegion: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
 }
 
 /**
@@ -254,13 +257,19 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
               overflow: 'hidden',
             }}
           >
-            {props.tracks.map((track, index) =>
-              track.regions.map((region) => (
+            {props.tracks.map((track, trackIndex) =>
+              track.regions.map((region, regionIndex) => (
                 <Region
-                  trackIndex={index}
+                  key={`${track.name}-${region.name}-${trackIndex}-${regionIndex}`}
+                  trackIndex={trackIndex}
+                  regionIndex={regionIndex}
                   region={region}
                   scale={props.scale}
                   converter={props.converter}
+                  onMove={props.onMoveRegion}
+                  onResize={props.onResizeRegion}
+                  timeSignature={props.timeSignature}
+                  end={props.end}
                 />
               )),
             )}

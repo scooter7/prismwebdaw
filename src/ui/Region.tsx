@@ -2,7 +2,7 @@ import { FunctionComponent, useEffect, useRef, useState } from 'react';
 
 import styles from './Region.module.css';
 import { RegionDataType, RegionInterface } from '../core/Region';
-import { LocationToTime } from '../core/Common';
+import { Duration, Location, LocationToTime, TimeSignature } from '../core/Common';
 import {
   REGION_HEIGHT_PX,
   REGION_RENDERING_HEIGHT_PX,
@@ -11,12 +11,18 @@ import {
 } from './Config';
 import { AudioRegion } from '../core/AudioRegion';
 import { EditableText } from '@blueprintjs/core';
+import { TimelineSettings } from './Timeline';
 
 export interface RegionProps {
   region: RegionInterface;
   trackIndex: number;
+  regionIndex: number;
   scale: number;
   converter: LocationToTime;
+  onMove: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
+  onResize: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
+  timeSignature: TimeSignature;
+  end: Location;
 }
 
 function audioToImage(audioBuffer: AudioBuffer, width: number): string {
@@ -71,14 +77,15 @@ enum DragState {
 export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
   const [selected, setSelected] = useState(false);
   const [name, setName] = useState(props.region.name);
+  const [tempStyle, setTempStyle] = useState<{ left?: number; width?: number } | null>(null);
 
-  const duration = props.converter.convertDurationAtLocation(
+  const scaleFactor = props.scale * TIMELINE_FACTOR_PX;
+  const initialLeft = props.converter.convertLocation(props.region.position) * scaleFactor;
+  const initialDuration = props.converter.convertDurationAtLocation(
     props.region.length,
     props.region.position,
   );
-
-  const scaleFactor = props.scale * TIMELINE_FACTOR_PX;
-  const width = duration * scaleFactor;
+  const initialWidth = initialDuration * scaleFactor;
 
   var audioImageOffset = 0;
   var audioImageWidth = 0;
@@ -93,9 +100,9 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
 
   const style = {
     borderColor: props.region.color,
-    width: `${width}px`,
+    width: tempStyle?.width !== undefined ? `${tempStyle.width}px` : `${initialWidth}px`,
     height: `${REGION_HEIGHT_PX}px`,
-    left: `${props.converter.convertLocation(props.region.position) * props.scale}rem`,
+    left: tempStyle?.left !== undefined ? `${tempStyle.left}px` : `${initialLeft}px`,
     top: `${props.trackIndex * TRACK_HEIGHT_PX}px`,
     backgroundColor: selected ? props.region.color : 'transparent',
   };
@@ -126,16 +133,14 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
 
   const renderData = useRef<string>('');
   if (renderData.current === '' && props.region.data.type === RegionDataType.Audio) {
-    console.log('rendering audio');
     renderData.current = retrieveImage(scaleFactor);
   }
 
   useEffect(() => {
     if (props.region.data.type === RegionDataType.Audio) {
-      console.log('re-rendering audio');
       renderData.current = retrieveImage(scaleFactor);
     }
-  }, [duration, props.scale, props.region.length]);
+  }, [initialDuration, props.scale, props.region.length]);
 
   function toggleSelection() {
     setSelected(!selected);
@@ -149,97 +154,120 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
   // Internal state variable to track the drag state.
   const dragState = useRef<DragState>(DragState.None);
   const dragStartX = useRef<number>(0);
-  const dragStartY = useRef<number>(0);
+  const dragStartRegionPosition = useRef<Location>(new Location());
 
   function onDragLeftStart(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.None) {
+      event.currentTarget.setPointerCapture(event.pointerId);
       dragState.current = DragState.Left;
       dragStartX.current = event.clientX;
-      dragStartY.current = event.clientY;
-      event.currentTarget.setPointerCapture(event.pointerId);
     }
   }
 
   function onDragLeftMove(event: React.PointerEvent<HTMLDivElement>) {
-    // for a non-looped region, the drag left gesture changes the start position within the
-    // audio file that is being played back. At most, the start position can be moved to the
-    // beginning of the audio file. I fmoved to the right, it can be moved at most to the
-    // end of the audio file.
-    // For a looped region, the drag left gesture changes the loop start position. That is,
-    // maintaining the loop length and looping iterval, the loop start determines where playback
-    // begins within the loop.
+    // Not implemented yet
   }
 
   function onDragLeftEnd(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.Left) {
-      dragState.current = DragState.None;
       event.currentTarget.releasePointerCapture(event.pointerId);
+      dragState.current = DragState.None;
     }
   }
 
   function onDragRightStart(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.None) {
+      event.currentTarget.setPointerCapture(event.pointerId);
       dragState.current = DragState.Right;
       dragStartX.current = event.clientX;
-      dragStartY.current = event.clientY;
     }
   }
 
   function onDragRightMove(event: React.PointerEvent<HTMLDivElement>) {
-    // for a non-looped region, the drag right gesture changes the end position within the
-    // audio file that is being played back. At most, the end position can be moved to the
-    // end of the audio file. If moved to the left, it can be moved at most to the
-    // beginning of the audio file.
-    // For a looped region, the drag right gesture changes the loop end position. That is,
-    // maintaining the loop length and looping iterval, the loop end determines where playback
-    // ends within the loop.
+    if (dragState.current === DragState.Right) {
+      const deltaX = event.clientX - dragStartX.current;
+      const newWidth = Math.max(initialWidth + deltaX, 10); // min width 10px
+      setTempStyle({ width: newWidth });
+    }
   }
 
   function onDragRightEnd(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.Right) {
-      dragState.current = DragState.None;
       event.currentTarget.releasePointerCapture(event.pointerId);
+      dragState.current = DragState.None;
+      setTempStyle(null);
+
+      const deltaX = event.clientX - dragStartX.current;
+      const newWidth = Math.max(initialWidth + deltaX, 10);
+      const newDurationSeconds = newWidth / scaleFactor;
+
+      const settings = new TimelineSettings(props.scale);
+      const startInSeconds = props.converter.convertLocation(props.region.position);
+      const newEndInSeconds = startInSeconds + newDurationSeconds;
+
+      const snappedEndLocation = settings.snap(
+        newEndInSeconds,
+        props.end,
+        props.timeSignature,
+        props.converter,
+      );
+      const newLength = props.region.position.diff(snappedEndLocation, props.timeSignature);
+
+      props.onResize(props.trackIndex, props.regionIndex, newLength);
     }
   }
 
   function onDragRegionStart(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.None) {
+      event.currentTarget.setPointerCapture(event.pointerId);
       dragState.current = DragState.Region;
       dragStartX.current = event.clientX;
-      dragStartY.current = event.clientY;
+      dragStartRegionPosition.current = props.region.position;
     }
   }
 
   function onDragRegionMove(event: React.PointerEvent<HTMLDivElement>) {
-    // The drag region gesture moves the entire region. The start and end positions are
-    // moved by the same amount. If the move operation would result in the region overalpping
-    // another region on he same track, then we truncate the move region to fit within the
-    // available free space on the track.
+    if (dragState.current === DragState.Region) {
+      const deltaX = event.clientX - dragStartX.current;
+      const newLeft = initialLeft + deltaX;
+      setTempStyle({ left: newLeft });
+    }
   }
 
   function onDragRegionEnd(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.Region) {
-      dragState.current = DragState.None;
       event.currentTarget.releasePointerCapture(event.pointerId);
+      dragState.current = DragState.None;
+      setTempStyle(null);
+
+      const deltaX = event.clientX - dragStartX.current;
+      const deltaTime = deltaX / scaleFactor;
+      const initialTime = props.converter.convertLocation(dragStartRegionPosition.current);
+      const newTime = initialTime + deltaTime;
+
+      const settings = new TimelineSettings(props.scale);
+      const newPosition = settings.snap(newTime, props.end, props.timeSignature, props.converter);
+
+      props.onMove(props.trackIndex, props.regionIndex, newPosition);
     }
   }
 
   function onDragLoopStart(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.None) {
+      event.currentTarget.setPointerCapture(event.pointerId);
       dragState.current = DragState.Loop;
       dragStartX.current = event.clientX;
-      dragStartY.current = event.clientY;
     }
   }
 
   function onDragLoopMove(event: React.PointerEvent<HTMLDivElement>) {
-    //
+    // Not implemented yet
   }
 
   function onDragLoopEnd(event: React.PointerEvent<HTMLDivElement>) {
     if (dragState.current === DragState.Loop) {
-      dragState.current = DragState.None;
       event.currentTarget.releasePointerCapture(event.pointerId);
+      dragState.current = DragState.None;
     }
   }
 
