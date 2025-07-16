@@ -23,6 +23,7 @@ import {
   X,
   Music,
   Music2,
+  Sparkles,
 } from 'lucide-react';
 import { Project } from './ui/Project';
 import { Project as ProjectObj } from './core/Project';
@@ -63,6 +64,7 @@ import {
 } from './components/ui/sheet';
 import { parseMidiFile } from './controller/MidiImport';
 import { TrackEventType } from './core/Events';
+import { AiChat } from './ui/AiChat';
 
 const audioContext = new AudioContext();
 
@@ -92,6 +94,7 @@ function App() {
   const [mixerVisible, setMixerVisible] = useState(false);
   const [browserVisible, setBrowserVisible] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAiChat, setShowAiChat] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   const continueChangeProject = useRef<() => void>();
@@ -345,9 +348,9 @@ function App() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="sm">
-              <Construction className="h-4 w-4 mr-2" />
-              Tools
+            <Button variant="ghost" size="sm" onClick={() => setShowAiChat(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Assistant
             </Button>
 
             <DropdownMenu>
@@ -436,6 +439,18 @@ function App() {
               Configure your application settings here.
             </SheetDescription>
           </SheetHeader>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={showAiChat} onOpenChange={setShowAiChat}>
+        <SheetContent className="w-[500px] sm:w-[540px]">
+          <SheetHeader>
+            <SheetTitle>AI Music Assistant</SheetTitle>
+            <SheetDescription>
+              Your creative partner for making music. Ask for ideas, instruments, or feedback.
+            </SheetDescription>
+          </SheetHeader>
+          <AiChat />
         </SheetContent>
       </Sheet>
     </EngineContext.Provider>
