@@ -6,6 +6,7 @@ import {
   PUBLIC_PATH,
   ToJson,
   createId,
+  ASSET_BASE_URL,
 } from './Common';
 
 export class AudioFile implements NamedObject, Identifiable, ToJson {
@@ -126,7 +127,7 @@ export class AudioFile implements NamedObject, Identifiable, ToJson {
     const name = obj['name'] as string;
     const urlString = `${PUBLIC_PATH}/${obj['url'] as string}`;
     console.log(`Loading audio file ${name} from ${urlString}`);
-    const url = new URL(urlString, window.location.origin);
+    const url = new URL(urlString, ASSET_BASE_URL);
 
     return new AudioFile(name, url, null);
   }

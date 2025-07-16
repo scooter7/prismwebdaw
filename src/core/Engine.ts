@@ -1,5 +1,5 @@
 import { AudioFile } from './AudioFile';
-import { Duration, Location } from './Common';
+import { ASSET_BASE_URL, Duration, Location } from './Common';
 import {
   PlaybackEvent,
   PlaybackEventHandler,
@@ -176,7 +176,7 @@ export class Engine {
 
   // The metronome sound generator
   private _metronome: Metronome = new Metronome(
-    AudioFile.create(new URL(DEFAULT_METRONOME_AUDIO_FILE, window.location.origin)),
+    AudioFile.create(new URL(DEFAULT_METRONOME_AUDIO_FILE, ASSET_BASE_URL)),
   );
 
   /**

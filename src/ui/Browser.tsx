@@ -8,7 +8,14 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Duration, Location, LocationToTime, PUBLIC_PATH, TimeSignature } from '../core/Common';
+import {
+  Duration,
+  Location,
+  LocationToTime,
+  PUBLIC_PATH,
+  TimeSignature,
+  ASSET_BASE_URL,
+} from '../core/Common';
 import {
   CLICK_TO_DRAG_TIMEOUT_MS,
   LIBRARY_JSON,
@@ -248,7 +255,7 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
       return node;
     } else {
       // create an audio file node
-      const nodeId = new URL(`${PUBLIC_PATH}/${json.path}`, window.location.origin).toString();
+      const nodeId = new URL(`${PUBLIC_PATH}/${json.path}`, ASSET_BASE_URL).toString();
       const nodeData = {
         downloadStatus: DownloadControlStatus.RemoteOnly,
         path: Uint32Array.from(nodePath),

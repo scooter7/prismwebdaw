@@ -6,6 +6,11 @@ import { PPQN } from './Config';
 export const PUBLIC_PATH = process.env.PUBLIC_URL || '';
 
 /**
+ * The base URL for loading assets like audio files.
+ */
+export const ASSET_BASE_URL = 'https://ai-music.github.io/webdaw';
+
+/**
  * Common properties for things that have a name.
  */
 export interface NamedObject {
