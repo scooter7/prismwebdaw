@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Duration, Location, LocationToTime, PUBLIC_URL, TimeSignature } from '../core/Common';
+import { Duration, Location, LocationToTime, PUBLIC_PATH, TimeSignature } from '../core/Common';
 import {
   CLICK_TO_DRAG_TIMEOUT_MS,
   LIBRARY_JSON,
@@ -248,7 +248,7 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
       return node;
     } else {
       // create an audio file node
-      const nodeId = `${PUBLIC_URL.toString()}${json.path}`;
+      const nodeId = new URL(`${PUBLIC_PATH}/${json.path}`, window.location.origin).toString();
       const nodeData = {
         downloadStatus: DownloadControlStatus.RemoteOnly,
         path: Uint32Array.from(nodePath),
@@ -270,10 +270,9 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
 
   // Load the tree nodes from the library inventory JSON file
   function loadTreeNodes() {
-    const urlString = `${PUBLIC_URL.toString()}${LIBRARY_JSON}`;
+    const urlString = `${PUBLIC_PATH}/${LIBRARY_JSON}`;
     console.log(`Loading library inventory from ${urlString}`);
-    const url = new URL(urlString);
-    fetch(url.toString()).then((response) => {
+    fetch(urlString).then((response) => {
       if (response.ok) {
         response.json().then((json) => {
           dispatch({ type: 'RELOAD_TREE_NODES', payload: { nodes: [jsonToTreeNodes(json)] } });

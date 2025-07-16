@@ -1,5 +1,5 @@
 import { AudioFile } from './AudioFile';
-import { Location, LocationToTime, MutableObject, NamedObject, PUBLIC_URL, assert } from './Common';
+import { Location, LocationToTime, MutableObject, NamedObject, PUBLIC_PATH, assert } from './Common';
 import { PlaybackScheduling } from './Track';
 
 type AudioState = {
@@ -11,7 +11,7 @@ type AudioState = {
  *
  * Eventually, this will be configurable by the user.
  */
-export const DEFAULT_METRONOME_AUDIO_FILE: string = `${PUBLIC_URL.toString()}library/samples/sample-pi/drums/one-shots/electric/elec_ping.flac`;
+export const DEFAULT_METRONOME_AUDIO_FILE: string = `${PUBLIC_PATH}/library/samples/sample-pi/drums/one-shots/electric/elec_ping.flac`;
 
 /**
  * The metronome is a special track that is used to schedule metronome clicks.

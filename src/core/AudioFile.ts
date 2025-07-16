@@ -3,7 +3,7 @@ import {
   JSONObject,
   JSONValue,
   NamedObject,
-  PUBLIC_URL,
+  PUBLIC_PATH,
   ToJson,
   createId,
 } from './Common';
@@ -119,9 +119,9 @@ export class AudioFile implements NamedObject, Identifiable, ToJson {
 
     const obj = file as JSONObject;
     const name = obj['name'] as string;
-    const urlString = `${PUBLIC_URL.toString()}${obj['url'] as string}`;
+    const urlString = `${PUBLIC_PATH}/${obj['url'] as string}`;
     console.log(`Loading audio file ${name} from ${urlString}`);
-    const url = new URL(urlString);
+    const url = new URL(urlString, window.location.origin);
 
     return new AudioFile(name, url, null);
   }

@@ -176,7 +176,7 @@ export class Engine {
 
   // The metronome sound generator
   private _metronome: Metronome = new Metronome(
-    AudioFile.create(new URL(DEFAULT_METRONOME_AUDIO_FILE)),
+    AudioFile.create(new URL(DEFAULT_METRONOME_AUDIO_FILE, window.location.origin)),
   );
 
   /**
