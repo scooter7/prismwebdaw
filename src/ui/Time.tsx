@@ -1,8 +1,6 @@
-import { FunctionComponent, useState } from 'react';
-
-import styles from './Time.module.css';
-import { EditableText, NumericInput } from '@blueprintjs/core';
-import { DiffieHellmanGroupConstructor } from 'crypto';
+import { FunctionComponent } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export type Props = {
   label: string;
@@ -16,87 +14,42 @@ function destructureTime(timestamp: number): [number, number, number, number] {
   const minutes = date.getUTCMinutes();
   const seconds = date.getUTCSeconds();
   const milliseconds = date.getUTCMilliseconds();
-
   return [hours, minutes, seconds, milliseconds];
 }
 
-function constructTime(
-  hours: number,
-  minutes: number,
-  seconds: number,
-  milliseconds: number,
-): number {
+function constructTime(hours: number, minutes: number, seconds: number, milliseconds: number): number {
   return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
 }
 
 export const Time: FunctionComponent<Props> = (props) => {
   const [hours, minutes, seconds, milliseconds] = destructureTime(props.timestamp);
 
+  const handleInputChange = (field: 'h' | 'm' | 's' | 'ms', value: string) => {
+    const numericValue = parseInt(value);
+    if (isNaN(numericValue)) return;
+
+    let newHours = hours, newMinutes = minutes, newSeconds = seconds, newMs = milliseconds;
+
+    if (field === 'h' && numericValue >= 0 && numericValue < 24) newHours = numericValue;
+    else if (field === 'm' && numericValue >= 0 && numericValue <= 59) newMinutes = numericValue;
+    else if (field === 's' && numericValue >= 0 && numericValue <= 59) newSeconds = numericValue;
+    else if (field === 'ms' && numericValue >= 0 && numericValue <= 999) newMs = numericValue;
+    else return;
+
+    props.setTimestamp(constructTime(newHours, newMinutes, newSeconds, newMs));
+  };
+
   return (
     <div>
-      <div className="bp5-text-small">
-        <label>{props.label}</label>
-      </div>
-      <div>
-        <EditableText
-          className={styles.hours}
-          confirmOnEnterKey={true}
-          value={hours.toString()}
-          minWidth={16}
-          onChange={(value) => {
-            const newHours = parseInt(value);
-            if (!isNaN(newHours) && newHours >= 0 && newHours < 24) {
-              props.setTimestamp(constructTime(newHours, minutes, seconds, milliseconds));
-            }
-          }}
-          selectAllOnFocus={true}
-          maxLength={4}
-        />
-        <b>:</b>
-        <EditableText
-          className={styles.minutes}
-          confirmOnEnterKey={true}
-          value={minutes.toString()}
-          minWidth={16}
-          onChange={(value) => {
-            const newMinutes = parseInt(value);
-            if (!isNaN(newMinutes) && newMinutes >= 0 && newMinutes <= 59) {
-              props.setTimestamp(constructTime(hours, newMinutes, seconds, milliseconds));
-            }
-          }}
-          selectAllOnFocus={true}
-          maxLength={3}
-        />
-        <b>:</b>
-        <EditableText
-          className={styles.seconds}
-          confirmOnEnterKey={true}
-          value={seconds.toString()}
-          minWidth={16}
-          onChange={(value) => {
-            const newSeconds = parseInt(value);
-            if (!isNaN(newSeconds) && newSeconds >= 0 && newSeconds <= 59) {
-              props.setTimestamp(constructTime(hours, minutes, newSeconds, milliseconds));
-            }
-          }}
-          selectAllOnFocus={true}
-          maxLength={3}
-        />
-        <b>:</b>
-        <EditableText
-          className={styles.milliseconds}
-          confirmOnEnterKey={true}
-          value={milliseconds.toString()}
-          minWidth={32}
-          onChange={(value) => {
-            const newMilliseconds = parseInt(value);
-            if (!isNaN(newMilliseconds) && newMilliseconds >= 0 && newMilliseconds <= 999) {
-              props.setTimestamp(constructTime(hours, minutes, seconds, newMilliseconds));
-            }
-          }}
-          selectAllOnFocus={true}
-          maxLength={4}
-        />
+      <Label className="text-xs">{props.label}</Label>
+      <div className="flex items-center space-x-1">
+        <Input className="w-10 h-8 text-center" value={hours.toString().padStart(2, '0')} onChange={(e) => handleInputChange('h', e.target.value)} maxLength={2} />
+        <span>:</span>
+        <Input className="w-10 h-8 text-center" value={minutes.toString().padStart(2, '0')} onChange={(e) => handleInputChange('m', e.target.value)} maxLength={2} />
+        <span>:</span>
+        <Input className="w-10 h-8 text-center" value={seconds.toString().padStart(2, '0')} onChange={(e) => handleInputChange('s', e.target.value)} maxLength={2} />
+        <span>:</span>
+        <Input className="w-12 h-8 text-center" value={milliseconds.toString().padStart(3, '0')} onChange={(e) => handleInputChange('ms', e.target.value)} maxLength={3} />
       </div>
     </div>
   );

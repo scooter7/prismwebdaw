@@ -1,8 +1,7 @@
-import { FunctionComponent, useState } from 'react';
+import { FunctionComponent } from 'react';
 import { Location as LocationObj, TimeSignature } from '../core/Common';
-import { EditableText } from '@blueprintjs/core';
-
-import styles from './Location.module.css';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export type Props = {
   timeSignature: TimeSignature;
@@ -12,57 +11,54 @@ export type Props = {
 };
 
 export const Location: FunctionComponent<Props> = (props) => {
+  const handleInputChange = (field: 'bar' | 'beat' | 'tick', value: string) => {
+    const numericValue = parseInt(value);
+    if (isNaN(numericValue)) return;
+
+    let { bar, beat, tick } = props.location;
+    let isValid = false;
+
+    if (field === 'bar' && numericValue >= 1 && numericValue <= 999) {
+      bar = numericValue;
+      isValid = true;
+    } else if (field === 'beat' && numericValue >= 1 && numericValue <= props.timeSignature.beatsPerBar) {
+      beat = numericValue;
+      isValid = true;
+    } else if (field === 'tick' && numericValue >= 1 && numericValue <= props.timeSignature.ticksPerBeat) {
+      tick = numericValue;
+      isValid = true;
+    }
+
+    if (isValid) {
+      props.setLocation(new LocationObj(bar, beat, tick));
+    }
+  };
+
   return (
-    <span>
-      <div className="bp5-text-small">
-        <label>{props.label}</label>
-      </div>
-      <div>
-        <EditableText
-          className={styles.bar}
-          minWidth={32}
-          confirmOnEnterKey={true}
+    <div>
+      <Label className="text-xs">{props.label}</Label>
+      <div className="flex items-center space-x-1">
+        <Input
+          className="w-12 h-8 text-center"
           value={props.location.bar.toString()}
-          onChange={(value) => {
-            const newBars = parseInt(value);
-            if (!isNaN(newBars) && newBars >= 1 && newBars <= 999) {
-              props.setLocation(new LocationObj(newBars, props.location.beat, props.location.tick));
-            }
-          }}
-          selectAllOnFocus={true}
+          onChange={(e) => handleInputChange('bar', e.target.value)}
           maxLength={3}
         />
-        <b>:</b>
-        <EditableText
-          className={styles.beat}
-          minWidth={16}
-          confirmOnEnterKey={true}
+        <span>:</span>
+        <Input
+          className="w-10 h-8 text-center"
           value={props.location.beat.toString()}
-          onChange={(value) => {
-            const newBeats = parseInt(value);
-            if (!isNaN(newBeats) && newBeats >= 1 && newBeats <= props.timeSignature.beatsPerBar) {
-              props.setLocation(new LocationObj(props.location.bar, newBeats, props.location.tick));
-            }
-          }}
-          selectAllOnFocus={true}
+          onChange={(e) => handleInputChange('beat', e.target.value)}
           maxLength={2}
         />
-        <b>:</b>
-        <EditableText
-          className={styles.tick}
-          minWidth={32}
-          confirmOnEnterKey={true}
+        <span>:</span>
+        <Input
+          className="w-12 h-8 text-center"
           value={props.location.tick.toString()}
-          onChange={(value) => {
-            const newTicks = parseInt(value);
-            if (!isNaN(newTicks) && newTicks >= 1 && newTicks <= props.timeSignature.ticksPerBeat) {
-              props.setLocation(new LocationObj(props.location.bar, props.location.beat, newTicks));
-            }
-          }}
-          selectAllOnFocus={true}
+          onChange={(e) => handleInputChange('tick', e.target.value)}
           maxLength={4}
         />
       </div>
-    </span>
+    </div>
   );
 };
