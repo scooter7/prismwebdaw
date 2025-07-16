@@ -65,6 +65,7 @@ import {
 import { parseMidiFile } from './controller/MidiImport';
 import { TrackEventType } from './core/Events';
 import { AiChat } from './ui/AiChat';
+import { Drawer } from '@blueprintjs/core';
 
 const audioContext = new AudioContext();
 
@@ -442,17 +443,22 @@ function App() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={showAiChat} onOpenChange={setShowAiChat}>
-        <SheetContent className="w-[500px] sm:w-[540px]">
-          <SheetHeader>
-            <SheetTitle>AI Music Assistant</SheetTitle>
-            <SheetDescription>
-              Your creative partner for making music. Ask for ideas, instruments, or feedback.
-            </SheetDescription>
-          </SheetHeader>
+      <Drawer
+        isOpen={showAiChat}
+        onClose={() => setShowAiChat(false)}
+        title="AI Music Assistant"
+        position="right"
+        size="540px"
+        hasBackdrop={false}
+        className="bg-background text-foreground"
+      >
+        <div className="p-4 h-full flex flex-col">
+          <p className="text-muted-foreground mb-4">
+            Your creative partner for making music. Ask for ideas, instruments, or feedback.
+          </p>
           <AiChat />
-        </SheetContent>
-      </Sheet>
+        </div>
+      </Drawer>
     </EngineContext.Provider>
   );
 }
