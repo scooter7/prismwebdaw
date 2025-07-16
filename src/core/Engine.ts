@@ -339,12 +339,30 @@ export class Engine {
             continuationTime,
             discontinuationTime,
           );
+          track.scheduleMidiEvents(
+            this._timeOffset,
+            lastScheduledArrangementTime,
+            scheduleAheadTime,
+            locationToTime,
+            this._loopIteration,
+            continuationTime,
+            discontinuationTime,
+          );
         });
 
         this.lastScheduledArrangementTime = scheduleAheadTime;
       } else {
         this.forAllSchedulables((track) => {
           track.scheduleAudioEvents(
+            this._timeOffset,
+            lastScheduledArrangementTime,
+            this._loopEndTime,
+            locationToTime,
+            this._loopIteration,
+            continuationTime,
+            this._loopEndTime,
+          );
+          track.scheduleMidiEvents(
             this._timeOffset,
             lastScheduledArrangementTime,
             this._loopEndTime,
@@ -364,6 +382,17 @@ export class Engine {
 
         this.forAllSchedulables((track) => {
           track.scheduleAudioEvents(
+            this._timeOffset,
+            locationToTime.convertLocation(
+              this.loopStart.sub(new Duration(0, 0, 1), this.project.timeSignature),
+            ),
+            remainder,
+            locationToTime,
+            this._loopIteration,
+            this._loopStartTime,
+            this._loopEndTime,
+          );
+          track.scheduleMidiEvents(
             this._timeOffset,
             locationToTime.convertLocation(
               this.loopStart.sub(new Duration(0, 0, 1), this.project.timeSignature),

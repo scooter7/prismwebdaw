@@ -49,13 +49,65 @@ export class InstrumentTrack extends AbstractTrack {
    */
   audioState: AudioState | null = null;
 
-  enabled: boolean = true;
-  volume: number = 0;
-  pan: number = 0;
+  private _volume: number = 0;
+
+  set volume(value: number) {
+    if (value === undefined) {
+      return;
+    }
+    this._volume = value;
+    if (this.audioState !== null) {
+      this.audioState.gain.gain.value = this.gainFromVolume;
+    }
+  }
+
+  get volume(): number {
+    return this._volume;
+  }
+
+  private _pan: number = 0;
+
+  set pan(value: number) {
+    if (value === undefined) {
+      return;
+    }
+    this._pan = value;
+    if (this.audioState !== null) {
+      this.audioState.panner.pan.value = value;
+    }
+  }
+
+  get pan(): number {
+    return this._pan;
+  }
+
+  private _enabled: boolean = true;
+  private _scheduleContinuation: boolean = false;
+
+  public get enabled(): boolean {
+    return this._enabled;
+  }
+
+  public set enabled(value: boolean) {
+    if (value === undefined || value === this._enabled) {
+      return;
+    }
+    this._enabled = value;
+    if (this.audioState !== null) {
+      this.audioState.channelStripInput.gain.value = value ? 1 : 0;
+      if (!value) {
+        this.stop();
+      }
+    }
+    if (value) {
+      this._scheduleContinuation = true;
+    }
+  }
 
   constructor(name: string, color: string, muted: boolean, instrument: Instrument) {
     super(name, color, muted);
     this.instrument = instrument;
+    this.enabled = !muted;
   }
 
   initializeAudio(context: AudioContext): void {
@@ -70,6 +122,10 @@ export class InstrumentTrack extends AbstractTrack {
       channelStripInput.connect(panner);
       panner.connect(gain);
       gain.connect(context.destination);
+
+      channelStripInput.gain.value = this._enabled ? 1 : 0;
+      panner.pan.value = this.pan;
+      gain.gain.value = this.gainFromVolume;
 
       this.audioState = { channelStripInput, gain, panner };
     } else {
