@@ -80,24 +80,29 @@ export class AudioFile implements NamedObject, Identifiable, ToJson {
     onError: (audioFile: AudioFile, error: Error) => void,
   ) {
     const file = this;
-    if (file._audioBuffer === null) {
-      try {
-        console.log(`Loading audio file ${file.name} from ${file.url}`);
-        const response = await fetch(file.url);
-        console.log(
-          `Fetched audio file ${file.name} with response ${response.status} ${response.statusText}`,
-        );
+    if (file._audioBuffer !== null) {
+      callback(file);
+      return;
+    }
 
-        // TODO: Should decoding sit on a work thread?
-        context.decodeAudioData(await response.arrayBuffer(), (buffer) => {
-          console.log(`Decoded audio file ${file.name}`);
-          file._audioBuffer = buffer;
-          callback(file);
-        });
-      } catch (err: any) {
-        console.error(`Unable to fetch the audio file. Error: ${err.message}`);
-        onError(file, err);
+    try {
+      console.log(`Loading audio file ${file.name} from ${file.url}`);
+      const response = await fetch(file.url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio file: ${response.status} ${response.statusText}`);
       }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const decodedBuffer = await context.decodeAudioData(arrayBuffer);
+
+      console.log(`Decoded audio file ${file.name}`);
+      file._audioBuffer = decodedBuffer;
+      callback(file);
+    } catch (err: any) {
+      console.error(`Failed to load or decode audio file ${file.name}. Error: ${err.message}`);
+      file._error = err;
+      onError(file, err);
     }
   }
 
