@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { FastForward, FastRewind, Pause, Play, Repeat, StepBack, StepForward, ZoomIn, ZoomOut, ZoomToFit, Mic } from 'lucide-react';
+import { FastForward, Rewind, Pause, Play, Repeat, StepBack, StepForward, ZoomIn, ZoomOut, Frame, Mic } from 'lucide-react';
 
 export enum PlaybackState {
   Stopped,
@@ -153,7 +153,7 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
     <div className="flex flex-wrap items-center gap-x-4 p-2 border-b">
       <div className="flex items-center space-x-1">
         <Button variant="ghost" size="icon" onClick={onBegin}><StepBack /></Button>
-        <Button variant="ghost" size="icon" onClick={onBackward}><FastRewind /></Button>
+        <Button variant="ghost" size="icon" onClick={onBackward}><Rewind /></Button>
         <Button variant="ghost" size="icon" onClick={play} disabled={playback !== PlaybackState.Stopped} className={playback === PlaybackState.Playing ? 'text-green-500' : ''}><Play /></Button>
         <Button variant="ghost" size="icon" onClick={pause} disabled={playback === PlaybackState.Stopped}><Pause /></Button>
         <Button variant="ghost" size="icon" onClick={record} disabled={true} className={playback === PlaybackState.Recording ? 'text-red-500' : ''}><Mic /></Button>
@@ -186,7 +186,7 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
       <div className="flex items-center space-x-1">
         <Button variant="ghost" size="icon" onClick={zoomOut} disabled={props.timelineScale <= MIN_TIMELINE_SCALE}><ZoomOut /></Button>
         <Button variant="ghost" size="icon" onClick={zoomIn} disabled={props.timelineScale >= MAX_TIMELINE_SCALE}><ZoomIn /></Button>
-        <Button variant="ghost" size="icon" onClick={zoomToFit}><ZoomToFit /></Button>
+        <Button variant="ghost" size="icon" onClick={zoomToFit}><Frame /></Button>
       </div>
     </div>
   );

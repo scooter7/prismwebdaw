@@ -1,0 +1,36 @@
+.trackinfo {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid lightgray;
+  background-color: white;
+}
+
+.name {
+  font-weight: bold;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.control {
+  margin-left: 0.5rem;
+}
+
+.secondRow {
+  display: flex;
+  align-items: center;
+}
+
+.menu {
+  margin-right: 0.5rem;
+}
+
+.volume {
+  flex-grow: 1;
+}
