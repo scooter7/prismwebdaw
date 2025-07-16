@@ -7,10 +7,10 @@ import { Engine } from '../core/Engine';
 import { PlaybackEvent, PlaybackEventType } from '../core/Events';
 import { MAX_TIMELINE_SCALE, MIN_TIMELINE_SCALE } from './Timeline';
 import { EngineContext } from './Context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
 import { FastForward, Rewind, Pause, Play, Repeat, StepBack, StepForward, ZoomIn, ZoomOut, Frame, Mic } from 'lucide-react';
 
 export enum PlaybackState {

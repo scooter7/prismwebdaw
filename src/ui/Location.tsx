@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'react';
 import { Location as LocationObj, TimeSignature } from '../core/Common';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 
 export type Props = {
   timeSignature: TimeSignature;
