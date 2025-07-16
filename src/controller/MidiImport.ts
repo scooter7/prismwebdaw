@@ -4,6 +4,7 @@ import { MidiRegion } from '../core/MidiRegion';
 import { NoteMidiData, MidiDataType } from '../core/MidiData';
 import { Analog } from '../instruments/Analog';
 import { Project } from '../core/Project';
+import { Location, Duration, TimeSignature } from '../core/Common';
 
 export async function parseMidiFile(file: File, project: Project): Promise<InstrumentTrack[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -31,6 +32,10 @@ export async function parseMidiFile(file: File, project: Project): Promise<Instr
         velocity: Math.round(note.velocity * 127), // Tone.js velocity is 0-1
       };
     });
+
+    if (notes.length === 0) {
+      return;
+    }
 
     const trackName = track.name || `MIDI Track ${trackIndex + 1}`;
 
