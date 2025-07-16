@@ -27,7 +27,7 @@ import { Project } from './ui/Project';
 import { Project as ProjectObj } from './core/Project';
 import { createProject, loadProject, saveAsProject, saveProject } from './controller/Projects';
 import { copy, cut, doDelete, paste, redo, undo } from './controller/Edit';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Engine } from './core/Engine';
 import { BUFFER_SIZE, SAMPLE_RATE } from './core/Config';
 import { AudioFileManager } from './core/AudioFileManager';
@@ -88,20 +88,27 @@ function App() {
   const [mixerVisible, setMixerVisible] = useState(false);
   const [browserVisible, setBrowserVisible] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const continueChangeProject = useRef<() => void>();
 
   const resumeAudio = () => {
+    const initialize = () => {
+      if (!initialized) {
+        initializeEngine(engine.current);
+        setInitialized(true);
+      }
+    };
+
     if (audioContext.state === 'suspended') {
       audioContext.resume().then(() => {
         console.log('AudioContext resumed successfully');
+        initialize();
       });
+    } else {
+      initialize();
     }
   };
-
-  useEffect(() => {
-    initializeEngine(engine.current);
-  }, []);
 
   function initializeEngine(engine: Engine) {
     setLoading(true);
