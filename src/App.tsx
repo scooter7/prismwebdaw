@@ -22,6 +22,7 @@ import {
   Info,
   X,
   Music,
+  Music2,
 } from 'lucide-react';
 import { Project } from './ui/Project';
 import { Project as ProjectObj } from './core/Project';
@@ -60,6 +61,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from './components/ui/sheet';
+import { parseMidiFile } from './controller/MidiImport';
+import { TrackEventType } from './core/Events';
 
 const audioContext = new AudioContext();
 
@@ -77,6 +80,7 @@ function App() {
     new Engine(audioContext, { bufferSize: BUFFER_SIZE, sampleRate: SAMPLE_RATE }, initialProject),
   );
   const audioFileManager = useRef<AudioFileManager>(new AudioFileManager());
+  const midiFileInputRef = useRef<HTMLInputElement>(null);
 
   const [project, setProject] = useState(initialProject);
   const [tracks, setTracks] = useState(initialProject.tracks);
@@ -141,6 +145,42 @@ function App() {
       action();
     }
   }
+
+  const handleMidiFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setLoading(true);
+    setLoadingProgress(0);
+
+    try {
+      const newMidiTracks = await parseMidiFile(file, project.timeSignature);
+
+      if (newMidiTracks.length > 0) {
+        const updatedTracks = [...project.tracks, ...newMidiTracks];
+        project.tracks = updatedTracks;
+
+        newMidiTracks.forEach((track) => {
+          engine.current.handleTrackEvent({
+            type: TrackEventType.Added,
+            track: track,
+          });
+        });
+
+        setTracks(updatedTracks);
+      }
+    } catch (error) {
+      console.error('Failed to import MIDI file:', error);
+      // You could add a user-facing error notification here
+    } finally {
+      setLoading(false);
+      if (midiFileInputRef.current) {
+        midiFileInputRef.current.value = '';
+      }
+    }
+  };
 
   return (
     <EngineContext.Provider value={engine.current}>
@@ -261,6 +301,11 @@ function App() {
                   <Copy className="h-4 w-4 mr-2" />
                   Save As...
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => midiFileInputRef.current?.click()}>
+                  <Music2 className="h-4 w-4 mr-2" />
+                  Import MIDI File...
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -365,6 +410,13 @@ function App() {
             </DropdownMenu>
           </div>
         </nav>
+        <input
+          type="file"
+          ref={midiFileInputRef}
+          onChange={handleMidiFileImport}
+          accept=".mid,.midi"
+          style={{ display: 'none' }}
+        />
         <Project
           project={project}
           tracks={tracks}
