@@ -14,11 +14,12 @@ const SYSTEM_PROMPT = `You are an expert AI music assistant integrated into a Di
 
 serve(async (req) => {
   console.log(`Request received: ${req.method} ${req.url}`);
+  console.log("Request headers:", Object.fromEntries(req.headers));
 
   try {
     if (req.method === 'OPTIONS') {
-      console.log("Handling OPTIONS request");
-      return new Response('ok', { headers: corsHeaders, status: 200 })
+      console.log("Handling OPTIONS request. Sending back headers:", corsHeaders);
+      return new Response(null, { headers: corsHeaders, status: 200 })
     }
 
     console.log("Handling POST request");
