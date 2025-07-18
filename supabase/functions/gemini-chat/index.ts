@@ -29,7 +29,7 @@ The JSON format is an object containing a list of patterns, as follows:
 }
 
 - For "instrument", you can specify "Analog", "acoustic_grand_piano", or "drums". Use "drums" for drum patterns.
-- When creating drum patterns, use MIDI notes that correspond to standard drum mappings. For example: Kick (36), Snare (38), Closed Hi-hat (42), Open Hi-hat (46), Crash (49), Clap (39).
+- When creating drum patterns, ONLY use the following MIDI notes: Kick (36), Snare (38), Closed Hi-hat (42). Do NOT use any other drum sounds like open hi-hat, crash, or clap.
 - For "start", bar, beat, and tick are all 1-based.
 - For "duration", bar, beat, and tick are all 0-based.
 - A common tick value for a quarter note duration is 480 (PPQN).

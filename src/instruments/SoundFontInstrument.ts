@@ -6,16 +6,13 @@ const pianoSamples = {
 };
 const pianoBaseUrl = 'https://tonejs.github.io/audio/salamander/';
 
-// Using samples from the official Tone.js examples CDN.
+// Using the Kit8 samples as requested, served from a reliable CDN.
 const drumSamples = {
-  'C2': 'kick.mp3',       // MIDI 36
-  'D2': 'snare.mp3',      // MIDI 38
-  'D#2': 'clap.mp3',      // MIDI 39
-  'F#2': 'hihat.mp3',     // MIDI 42 (Closed Hi-hat)
-  'A#2': 'hihat-open.mp3',// MIDI 46 (Open Hi-hat)
-  'C#3': 'crash.mp3',     // MIDI 49
+  'C2': 'kick.mp3',    // MIDI 36
+  'D2': 'snare.mp3',   // MIDI 38
+  'F#2': 'hihat.mp3',  // MIDI 42 (Closed)
 };
-const drumBaseUrl = 'https://cdn.jsdelivr.net/gh/tonejs/audio@main/drum-machine/';
+const drumBaseUrl = 'https://cdn.jsdelivr.net/gh/tonejs/audio@main/drum-samples/Kit8/';
 
 export class SoundFontInstrument implements Instrument {
   private sampler: Tone.Sampler | null = null;
