@@ -3,7 +3,6 @@ import { FunctionComponent, useContext, useEffect, useRef, useState } from 'reac
 import { Transport } from './Transport';
 import { Mixer } from './Mixer';
 import { Duration, Location, Location as LocationValue } from '../core/Common';
-import { Drawer } from '@blueprintjs/core';
 import { Project as ProjectObj } from '../core/Project';
 import {
   PlaybackPositionEvent,
@@ -30,6 +29,7 @@ import { AudioRegion } from '../core/AudioRegion';
 import { cloneDeep } from 'lodash';
 import { PianoRoll } from './PianoRoll';
 import { MidiRegion } from '../core/MidiRegion';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../components/ui/sheet';
 
 export type ProjectProps = {
   project: ProjectObj;
@@ -383,18 +383,15 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           </div>
         )}
       </div>
-      <Drawer
-        isOpen={props.mixerVisible}
-        onClose={() => props.setMixerVisible(false)}
-        canOutsideClickClose={false}
-        icon="settings"
-        position="bottom"
-        size="75%"
-        title="Mixer"
-        usePortal={false}
-      >
-        <Mixer />
-      </Drawer>
+      <Sheet open={props.mixerVisible} onOpenChange={props.setMixerVisible}>
+        <SheetContent side="bottom" className="h-3/4">
+          <SheetHeader>
+            <SheetTitle>Mixer</SheetTitle>
+            <SheetDescription>Adjust track volumes, panning, and effects.</SheetDescription>
+          </SheetHeader>
+          <Mixer />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

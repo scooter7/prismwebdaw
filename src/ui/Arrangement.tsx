@@ -1,4 +1,5 @@
 import { FunctionComponent, UIEvent as ReactUIEvent, useRef, useState } from 'react';
+import { GripVertical, Plus } from 'lucide-react';
 
 import styles from './Arrangement.module.css';
 import { Timeline, TimelineProps } from './Timeline';
@@ -14,7 +15,7 @@ import {
   TIMELINE_FACTOR_PX,
   TRACK_HEIGHT_PX,
 } from './Config';
-import { Button, ButtonGroup } from '@blueprintjs/core';
+import { Button } from '../components/ui/button';
 import { Duration, Location } from '../core/Common';
 
 /**
@@ -188,20 +189,14 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
                     isDragging && index === dragStartIndex.current ? styles.dragging : ''
                   }`}
                 >
-                  <i
-                    className={styles.grip}
-                    style={{
-                      color: track.color,
-                      textShadow: `0px -4px 0px ${track.color}`,
-                    }}
-                    onPointerDown={(e) => onDragTrackStart(e, index)}
-                    onPointerMove={(e) => onDragTrack(e, index)}
-                    onPointerUp={(e) => onDragTrackEnd(e, index)}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      return false;
-                    }}
-                  ></i>
+                  <div
+                    className="flex items-center justify-center w-6 cursor-move"
+                    onPointerDown={(e: any) => onDragTrackStart(e, index)}
+                    onPointerMove={(e: any) => onDragTrack(e, index)}
+                    onPointerUp={(e: any) => onDragTrackEnd(e, index)}
+                  >
+                    <GripVertical className="h-5 w-5 text-muted-foreground" />
+                  </div>
                   <TrackInfo
                     delete={() => props.deleteTrack(index)}
                     colorChange={(color) => {
@@ -221,18 +216,13 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
                 }}
               />
               <div
-                className={styles.trackInfoPlaceholder}
-                style={{ height: TRACK_HEIGHT_PX, lineHeight: `${TRACK_HEIGHT_PX}px` }}
+                className="flex items-center justify-center"
+                style={{ height: TRACK_HEIGHT_PX }}
               >
-                <ButtonGroup>
-                  <Button
-                    icon="plus"
-                    small
-                    minimal
-                    outlined={false}
-                    onClick={() => props.appendTrack('audio')}
-                  />
-                </ButtonGroup>
+                <Button variant="outline" size="sm" onClick={() => props.appendTrack('audio')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Track
+                </Button>
               </div>
             </div>
           </div>
