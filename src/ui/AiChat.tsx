@@ -11,7 +11,7 @@ interface Message {
 }
 
 interface AiChatProps {
-  onMidiPatternGenerated: (pattern: any) => void;
+  onMidiPatternGenerated: (pattern: any) => Promise<void>;
 }
 
 export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated }) => {
@@ -55,9 +55,9 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           const midiData = JSON.parse(midiJsonString);
           
           if (midiData.type === 'midi_patterns' && Array.isArray(midiData.patterns)) {
-            midiData.patterns.forEach((pattern: any) => {
-              onMidiPatternGenerated(pattern);
-            });
+            for (const pattern of midiData.patterns) {
+              await onMidiPatternGenerated(pattern);
+            }
           }
           
           assistantContent = assistantContent.replace(midiRegex, '').trim();

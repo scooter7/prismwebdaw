@@ -181,12 +181,12 @@ function App() {
         const updatedTracks = [...project.tracks, ...newMidiTracks];
         project.tracks = updatedTracks;
 
-        newMidiTracks.forEach((track) => {
-          engine.current.handleTrackEvent({
+        for (const track of newMidiTracks) {
+          await engine.current.handleTrackEvent({
             type: TrackEventType.Added,
             track: track,
           });
-        });
+        }
 
         setTracks(updatedTracks);
       }
@@ -200,7 +200,7 @@ function App() {
     }
   };
 
-  const handleMidiPatternGenerated = (pattern: any) => {
+  const handleMidiPatternGenerated = async (pattern: any) => {
     if (!pattern.trackName || !pattern.notes || !Array.isArray(pattern.notes) || pattern.notes.length === 0) {
       console.error('Invalid MIDI pattern object received from AI', pattern);
       return;
@@ -237,7 +237,7 @@ function App() {
 
     project.appendTrack(newTrack);
 
-    engine.current.handleTrackEvent({
+    await engine.current.handleTrackEvent({
       type: TrackEventType.Added,
       track: newTrack,
     });
