@@ -12,7 +12,7 @@ export class SoundFontInstrument implements Instrument {
 
   async initialize(context: AudioContext): Promise<void> {
     // Use the existing AudioContext with Tone.js
-    await Tone.setContext(context).ready();
+    Tone.setContext(context);
 
     this.sampler = new Tone.Sampler({
       urls: {
