@@ -187,8 +187,8 @@ function App() {
   };
 
   const handleMidiPatternGenerated = (pattern: any) => {
-    if (pattern.type !== 'midi_pattern' || !pattern.notes || pattern.notes.length === 0) {
-      console.error('Invalid MIDI pattern received from AI', pattern);
+    if (!pattern.trackName || !pattern.notes || !Array.isArray(pattern.notes) || pattern.notes.length === 0) {
+      console.error('Invalid MIDI pattern object received from AI', pattern);
       return;
     }
 
@@ -221,15 +221,14 @@ function App() {
     const newTrack = new InstrumentTrack(trackName, randomColor, false, instrument);
     newTrack.regions.push(region);
 
-    const updatedTracks = [...project.tracks, newTrack];
-    project.tracks = updatedTracks;
+    project.appendTrack(newTrack);
 
     engine.current.handleTrackEvent({
       type: TrackEventType.Added,
       track: newTrack,
     });
 
-    setTracks([...updatedTracks]);
+    setTracks([...project.tracks]);
   };
 
   const handleRegionDoubleClick = (trackIndex: number, regionIndex: number) => {
