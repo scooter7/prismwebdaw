@@ -33,7 +33,7 @@ import { MidiRegion } from '../core/MidiRegion';
 
 export type ProjectProps = {
   project: ProjectObj;
-  tracks: TrackInterface[];
+  tracks: AbstractTrack[];
   setTracks: (tracks: AbstractTrack[]) => void;
   mixerVisible: boolean;
   setMixerVisible: (visible: boolean) => void;
