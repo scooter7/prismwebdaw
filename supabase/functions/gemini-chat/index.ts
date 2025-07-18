@@ -20,21 +20,16 @@ The JSON format is an object containing a list of patterns, as follows:
   "patterns": [
     {
       "trackName": "A descriptive name for the first track",
-      "instrument": "Analog",
+      "instrument": "acoustic_grand_piano",
       "notes": [
         { "note": 48, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 480 }, "velocity": 100 }
-      ]
-    },
-    {
-      "trackName": "A descriptive name for the second track",
-      "instrument": "Analog",
-      "notes": [
-        { "note": 60, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 1, "tick": 0 }, "velocity": 120 }
       ]
     }
   ]
 }
 
+- For "instrument", you can specify "Analog", "acoustic_grand_piano", or "drums". Use "drums" for drum patterns.
+- When creating drum patterns, use MIDI notes that correspond to standard drum mappings. For example: Kick (36), Snare (38), Closed Hi-hat (42), Open Hi-hat (46), Crash (49), Clap (39).
 - For "start", bar, beat, and tick are all 1-based.
 - For "duration", bar, beat, and tick are all 0-based.
 - A common tick value for a quarter note duration is 480 (PPQN).
@@ -59,10 +54,10 @@ Here is a funky bassline and a simple drum beat for you! I've added them to your
     },
     {
       "trackName": "Simple Drums",
-      "instrument": "Analog",
+      "instrument": "drums",
       "notes": [
         { "note": 36, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 120 }, "velocity": 127 },
-        { "note": 42, "start": { "bar": 1, "beat": 2, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 120 }, "velocity": 100 }
+        { "note": 38, "start": { "bar": 1, "beat": 2, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 120 }, "velocity": 100 }
       ]
     }
   ]

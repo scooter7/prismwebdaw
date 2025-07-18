@@ -65,6 +65,7 @@ import { Duration, Location } from './core/Common';
 import { MidiDataType, NoteMidiData } from './core/MidiData';
 import { COLORS } from './ui/Config';
 import { SoundFontInstrument } from './instruments/SoundFontInstrument';
+import { Instrument } from './core/Instrument';
 
 const audioContext = new AudioContext();
 
@@ -74,6 +75,18 @@ const LICENSE =
 function openDocumentation() {
   window.open('https://ai-music.github.io/webdaw-doc/', 'Documentation', 'width=800, height=600');
   return false;
+}
+
+function createInstrument(name: string): Instrument {
+  const lowerName = name.toLowerCase();
+  if (lowerName === 'analog') {
+    return new Analog();
+  }
+  if (lowerName === 'drums') {
+    return new SoundFontInstrument('drums');
+  }
+  // Default to piano
+  return new SoundFontInstrument('acoustic_grand_piano');
 }
 
 function App() {
@@ -218,7 +231,7 @@ function App() {
 
     const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
 
-    const instrument = new SoundFontInstrument('acoustic_grand_piano');
+    const instrument = createInstrument(pattern.instrument || 'acoustic_grand_piano');
     const newTrack = new InstrumentTrack(trackName, randomColor, false, instrument);
     newTrack.regions.push(region);
 
