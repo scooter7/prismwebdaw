@@ -28,6 +28,8 @@ import { EngineContext } from './Context';
 import { AudioFile } from '../core/AudioFile';
 import { AudioRegion } from '../core/AudioRegion';
 import { cloneDeep } from 'lodash';
+import { PianoRoll } from './PianoRoll';
+import { MidiRegion } from '../core/MidiRegion';
 
 export type ProjectProps = {
   project: ProjectObj;
@@ -37,6 +39,9 @@ export type ProjectProps = {
   setMixerVisible: (visible: boolean) => void;
   browserVisible: boolean;
   setBrowserVisible: (visible: boolean) => void;
+  editingRegion: { trackIndex: number; regionIndex: number } | null;
+  setEditingRegion: (region: { trackIndex: number; regionIndex: number } | null) => void;
+  onRegionDoubleClick: (trackIndex: number, regionIndex: number) => void;
 };
 
 export const Project: FunctionComponent<ProjectProps> = (props) => {
@@ -338,6 +343,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           setLooping={changeLooping}
           onMoveRegion={handleMoveRegion}
           onResizeRegion={handleResizeRegion}
+          onRegionDoubleClick={props.onRegionDoubleClick}
         />
       </div>
       <div>
@@ -354,6 +360,31 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           <Mixer />
         </Drawer>
       </div>
+      <Drawer
+        isOpen={props.editingRegion !== null}
+        onClose={() => props.setEditingRegion(null)}
+        title="Piano Roll Editor"
+        position="bottom"
+        size="50%"
+        hasBackdrop={false}
+        className="bg-background text-foreground"
+      >
+        <div className="p-4 h-full">
+          {props.editingRegion && (
+            <PianoRoll
+              region={
+                props.project.tracks[props.editingRegion.trackIndex].regions[
+                  props.editingRegion.regionIndex
+                ] as MidiRegion
+              }
+              timeSignature={props.project.timeSignature}
+              converter={props.project.locationToTime}
+              scale={timelineScale}
+              end={end}
+            />
+          )}
+        </div>
+      </Drawer>
     </>
   );
 };

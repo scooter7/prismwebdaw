@@ -103,6 +103,10 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAiChat, setShowAiChat] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [editingRegion, setEditingRegion] = useState<{
+    trackIndex: number;
+    regionIndex: number;
+  } | null>(null);
 
   const continueChangeProject = useRef<() => void>();
 
@@ -239,6 +243,14 @@ function App() {
     });
 
     setTracks([...updatedTracks]);
+  };
+
+  const handleRegionDoubleClick = (trackIndex: number, regionIndex: number) => {
+    const track = project.tracks[trackIndex];
+    const region = track.regions[regionIndex];
+    if (track.type === 'instrument' && region) {
+      setEditingRegion({ trackIndex, regionIndex });
+    }
   };
 
   return (
@@ -476,15 +488,20 @@ function App() {
           accept=".mid,.midi"
           style={{ display: 'none' }}
         />
-        <Project
-          project={project}
-          tracks={tracks}
-          setTracks={setTracks}
-          mixerVisible={mixerVisible}
-          setMixerVisible={setMixerVisible}
-          browserVisible={browserVisible}
-          setBrowserVisible={setBrowserVisible}
-        />
+        <AudioFileManagerContext.Provider value={audioFileManager.current}>
+          <Project
+            project={project}
+            tracks={tracks}
+            setTracks={setTracks}
+            mixerVisible={mixerVisible}
+            setMixerVisible={setMixerVisible}
+            browserVisible={browserVisible}
+            setBrowserVisible={setBrowserVisible}
+            editingRegion={editingRegion}
+            setEditingRegion={setEditingRegion}
+            onRegionDoubleClick={handleRegionDoubleClick}
+          />
+        </AudioFileManagerContext.Provider>
       </div>
 
       <Sheet open={showSettings} onOpenChange={setShowSettings}>

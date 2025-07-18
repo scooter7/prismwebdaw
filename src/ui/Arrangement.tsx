@@ -30,6 +30,7 @@ export interface ArrangementProps extends TimelineProps {
   totalHeight: number;
   onMoveRegion: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
   onResizeRegion: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
+  onRegionDoubleClick: (trackIndex: number, regionIndex: number) => void;
 }
 
 /**
@@ -268,6 +269,7 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
                   converter={props.converter}
                   onMove={props.onMoveRegion}
                   onResize={props.onResizeRegion}
+                  onDoubleClick={props.onRegionDoubleClick}
                   timeSignature={props.timeSignature}
                   end={props.end}
                 />

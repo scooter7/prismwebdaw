@@ -1,0 +1,95 @@
+.pianoRoll {
+  display: flex;
+  height: 100%;
+  background-color: #f8f9fa;
+  overflow: auto;
+  border: 1px solid #dee2e6;
+}
+
+.keyboard {
+  flex: 0 0 80px;
+  background-color: #fff;
+  border-right: 1px solid #ccc;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  user-select: none;
+}
+
+.key {
+  height: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 5px;
+  font-size: 10px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.whiteKey {
+  composes: key;
+  background-color: #fff;
+}
+
+.blackKey {
+  composes: key;
+  background-color: #343a40;
+  color: #fff;
+}
+
+.blackKey::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 100%;
+  height: 1px;
+  background-color: #495057;
+}
+
+.gridContainer {
+  flex-grow: 1;
+  position: relative;
+}
+
+.grid {
+  position: relative;
+  height: 100%;
+}
+
+.gridLineVertical {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  background-color: #e9ecef;
+  z-index: 1;
+}
+
+.gridLineHorizontal {
+  position: absolute;
+  left: 0;
+  height: 1px;
+  background-color: #e9ecef;
+  z-index: 1;
+}
+
+.gridLineHorizontalDark {
+  position: absolute;
+  left: 0;
+  height: 1px;
+  background-color: #d8dde0;
+  z-index: 1;
+}
+
+.note {
+  position: absolute;
+  background-color: #4dabf7;
+  border: 1px solid #1c7ed6;
+  border-radius: 3px;
+  box-sizing: border-box;
+  opacity: 0.9;
+  z-index: 2;
+  cursor: pointer;
+}

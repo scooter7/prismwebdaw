@@ -21,6 +21,7 @@ export interface RegionProps {
   converter: LocationToTime;
   onMove: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
   onResize: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
+  onDoubleClick: (trackIndex: number, regionIndex: number) => void;
   timeSignature: TimeSignature;
   end: Location;
 }
@@ -272,7 +273,12 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
   }
 
   return (
-    <div className={styles.region} style={style} onClick={toggleSelection}>
+    <div
+      className={styles.region}
+      style={style}
+      onClick={toggleSelection}
+      onDoubleClick={() => props.onDoubleClick(props.trackIndex, props.regionIndex)}
+    >
       <div className={styles.handles}>
         <div
           className={styles.leftHandle}
