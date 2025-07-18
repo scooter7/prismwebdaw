@@ -2,7 +2,6 @@ import {
   File,
   Settings,
   Pencil,
-  Construction,
   Eye,
   HelpCircle,
   FilePlus,
@@ -20,7 +19,6 @@ import {
   Github,
   Bug,
   Info,
-  X,
   Music,
   Music2,
   Sparkles,
@@ -38,9 +36,7 @@ import { Button } from './components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './components/ui/dropdown-menu';
@@ -51,8 +47,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from './components/ui/dialog';
 import {
   Sheet,
@@ -60,12 +54,10 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from './components/ui/sheet';
 import { parseMidiFile } from './controller/MidiImport';
 import { TrackEventType } from './core/Events';
 import { AiChat } from './ui/AiChat';
-import { Drawer } from '@blueprintjs/core';
 import { InstrumentTrack } from './core/InstrumentTrack';
 import { Analog } from './instruments/Analog';
 import { MidiRegion } from './core/MidiRegion';
@@ -101,7 +93,6 @@ function App() {
   const [mixerVisible, setMixerVisible] = useState(false);
   const [browserVisible, setBrowserVisible] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
-  const [showAiChat, setShowAiChat] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [editingRegion, setEditingRegion] = useState<{
     trackIndex: number;
@@ -187,7 +178,6 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to import MIDI file:', error);
-      // You could add a user-facing error notification here
     } finally {
       setLoading(false);
       if (midiFileInputRef.current) {
@@ -212,7 +202,6 @@ function App() {
       duration: new Duration(note.duration.bar, note.duration.beat, note.duration.tick),
     }));
 
-    // Calculate region boundaries
     const firstNoteStart = notes.reduce((min, p) => (p.start.compare(min.start) < 0 ? p : min))
       .start;
     const lastNoteEnd = notes.reduce((max, p) => {
@@ -228,12 +217,10 @@ function App() {
 
     const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
 
-    // For now, we only support the Analog instrument
     const instrument = new Analog();
     const newTrack = new InstrumentTrack(trackName, randomColor, false, instrument);
     newTrack.regions.push(region);
 
-    // Add track to project and update state
     const updatedTracks = [...project.tracks, newTrack];
     project.tracks = updatedTracks;
 
@@ -273,7 +260,7 @@ function App() {
           </DialogDescription>
           <textarea
             readOnly
-            className="mt-4 w-full h-32 p-2 border rounded text-xs"
+            className="mt-4 w-full h-32 p-2 border rounded text-xs bg-muted"
             value={LICENSE}
           />
           <DialogFooter>
@@ -290,9 +277,9 @@ function App() {
               Please wait while the project is being loaded...
             </DialogDescription>
           </DialogHeader>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-4">
+          <div className="w-full bg-muted rounded-full h-2.5 mt-4">
             <div
-              className="bg-blue-600 h-2.5 rounded-full"
+              className="bg-primary h-2.5 rounded-full"
               style={{ width: `${loadingProgress * 100}%` }}
             ></div>
           </div>
@@ -328,9 +315,9 @@ function App() {
         className="h-screen max-h-screen w-screen flex flex-col bg-background text-foreground"
         onClick={resumeAudio}
       >
-        <nav className="flex items-center px-4 py-2 border-b">
+        <header className="flex items-center px-4 py-2 border-b shrink-0">
           <h1 className="text-xl font-bold mr-4">WebDAW</h1>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -416,11 +403,6 @@ function App() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="sm" onClick={() => setShowAiChat(true)}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI Assistant
-            </Button>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -480,7 +462,34 @@ function App() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </nav>
+        </header>
+        <main className="flex-grow flex overflow-hidden">
+          <AudioFileManagerContext.Provider value={audioFileManager.current}>
+            <Project
+              project={project}
+              tracks={tracks}
+              setTracks={setTracks}
+              mixerVisible={mixerVisible}
+              setMixerVisible={setMixerVisible}
+              browserVisible={browserVisible}
+              setBrowserVisible={setBrowserVisible}
+              editingRegion={editingRegion}
+              setEditingRegion={setEditingRegion}
+              onRegionDoubleClick={handleRegionDoubleClick}
+            />
+          </AudioFileManagerContext.Provider>
+          <aside className="w-80 flex-shrink-0 border-l border-border bg-background/50 flex flex-col">
+            <div className="p-4 border-b">
+              <h2 className="text-lg font-semibold flex items-center">
+                <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
+                AI Music Assistant
+              </h2>
+            </div>
+            <div className="flex-grow p-4 overflow-y-auto">
+              <AiChat onMidiPatternGenerated={handleMidiPatternGenerated} />
+            </div>
+          </aside>
+        </main>
         <input
           type="file"
           ref={midiFileInputRef}
@@ -488,20 +497,6 @@ function App() {
           accept=".mid,.midi"
           style={{ display: 'none' }}
         />
-        <AudioFileManagerContext.Provider value={audioFileManager.current}>
-          <Project
-            project={project}
-            tracks={tracks}
-            setTracks={setTracks}
-            mixerVisible={mixerVisible}
-            setMixerVisible={setMixerVisible}
-            browserVisible={browserVisible}
-            setBrowserVisible={setBrowserVisible}
-            editingRegion={editingRegion}
-            setEditingRegion={setEditingRegion}
-            onRegionDoubleClick={handleRegionDoubleClick}
-          />
-        </AudioFileManagerContext.Provider>
       </div>
 
       <Sheet open={showSettings} onOpenChange={setShowSettings}>
@@ -514,23 +509,6 @@ function App() {
           </SheetHeader>
         </SheetContent>
       </Sheet>
-
-      <Drawer
-        isOpen={showAiChat}
-        onClose={() => setShowAiChat(false)}
-        title="AI Music Assistant"
-        position="right"
-        size="540px"
-        hasBackdrop={false}
-        className="bg-background text-foreground"
-      >
-        <div className="p-4 h-full flex flex-col">
-          <p className="text-muted-foreground mb-4">
-            Your creative partner for making music. Ask for ideas, instruments, or feedback.
-          </p>
-          <AiChat onMidiPatternGenerated={handleMidiPatternGenerated} />
-        </div>
-      </Drawer>
     </EngineContext.Provider>
   );
 }

@@ -49,7 +49,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
 
   const [timelineScale, setTimelineScale] = useState(4);
 
-  const [timestamp, setTimestamp] = useState(0); // [hh, mm, ss, uuuu]
+  const [timestamp, setTimestamp] = useState(0);
   const [current, setCurrent] = useState(new LocationValue(1, 1, 1));
 
   const [loopStart, setLoopStart] = useState(props.project.loopStart);
@@ -60,7 +60,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
 
   function moveTrackToPosition(index: number, position: number) {
     props.project.moveTrackToPosition(index, position);
-    props.setTracks(props.project.tracks);
+    props.setTracks([...props.project.tracks]);
   }
 
   function deleteTrack(index: number) {
@@ -70,7 +70,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     });
 
     props.project.deleteTrack(index);
-    props.setTracks(props.project.tracks);
+    props.setTracks([...props.project.tracks]);
   }
 
   function appendTrack(trackType: string) {
@@ -83,7 +83,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
         track: track,
       });
 
-      props.setTracks(props.project.tracks);
+      props.setTracks([...props.project.tracks]);
     }
   }
 
@@ -224,7 +224,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
       type: TrackEventType.Added,
       track: track,
     });
-    props.setTracks(props.project.tracks);
+    props.setTracks([...props.project.tracks]);
   }
 
   function addRegionToTrack(
@@ -251,13 +251,11 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
   }
 
   function handleMoveRegion(trackIndex: number, regionIndex: number, newPosition: Location) {
-    // TODO: Add overlap logic
     props.project.tracks[trackIndex].regions[regionIndex].position = newPosition;
     props.setTracks(cloneDeep(props.project.tracks));
   }
 
   function handleResizeRegion(trackIndex: number, regionIndex: number, newLength: Duration) {
-    // TODO: Add overlap logic
     props.project.tracks[trackIndex].regions[regionIndex].length = newLength;
     props.setTracks(cloneDeep(props.project.tracks));
   }
@@ -271,10 +269,8 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     }
   };
 
-  //
-  // Browser to the left, InfoPanel to the right, in the center stack of Arrangement, Editor
   return (
-    <>
+    <div className="flex flex-col flex-grow overflow-hidden">
       <Transport
         project={props.project}
         totalWidth={totalWidth}
@@ -395,6 +391,6 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           )}
         </div>
       </Drawer>
-    </>
+    </div>
   );
 };

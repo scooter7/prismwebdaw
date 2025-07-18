@@ -57,7 +57,6 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
       const data = await response.json();
       let assistantContent = data.response;
 
-      // Check for the special MIDI block
       const midiRegex = /\[WEBDAW_MIDI\]([\s\S]*?)\[\/WEBDAW_MIDI\]/;
       const midiMatch = assistantContent.match(midiRegex);
 
@@ -67,11 +66,9 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           const midiPattern = JSON.parse(midiJsonString);
           onMidiPatternGenerated(midiPattern);
           
-          // Remove the block from the displayed message
           assistantContent = assistantContent.replace(midiRegex, '').trim();
         } catch (jsonError) {
           console.error("Failed to parse MIDI JSON from AI response:", jsonError);
-          // Don't block the text response from showing
         }
       }
       
@@ -87,21 +84,24 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
   };
 
   return (
-    <div className="flex flex-col h-full pt-4">
+    <div className="flex flex-col h-full">
+      <p className="text-muted-foreground text-sm mb-4">
+        Your creative partner for making music. Ask for ideas, instruments, or feedback.
+      </p>
       <ScrollArea className="flex-grow mb-4 pr-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
-              {message.role === 'assistant' && <Bot className="h-6 w-6 flex-shrink-0" />}
-              <div className={`rounded-lg px-3 py-2 ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              {message.role === 'assistant' && <Bot className="h-6 w-6 flex-shrink-0 text-yellow-400" />}
+              <div className={`rounded-lg px-3 py-2 text-sm ${message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-muted'}`}>
+                <p className="whitespace-pre-wrap">{message.content}</p>
               </div>
               {message.role === 'user' && <User className="h-6 w-6 flex-shrink-0" />}
             </div>
           ))}
           {isLoading && (
              <div className="flex items-start gap-3">
-                <Bot className="h-6 w-6 flex-shrink-0" />
+                <Bot className="h-6 w-6 flex-shrink-0 text-yellow-400" />
                 <div className="rounded-lg px-3 py-2 bg-muted flex items-center">
                     <Loader2 className="h-5 w-5 animate-spin" />
                 </div>
@@ -113,8 +113,8 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask for a funky bassline in C minor..."
-          className="flex-grow"
+          placeholder="Create a funky bassline..."
+          className="flex-grow bg-background/80"
           disabled={isLoading}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {

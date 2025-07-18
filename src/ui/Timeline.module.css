@@ -1,37 +1,32 @@
 .timeline {
   display: flex;
   width: 100%;
-  /* border: 1px solid blue; */
   height: 2rem;
-  margin-bottom: 0.5rem;
 }
 
 .timelineFront {
   width: 13rem;
   min-width: 13rem;
   position: relative;
-  /* border: 1px solid blue; */
 }
 
 .timelineBack {
   width: 100%;
   position: relative;
-  /* border: 1px solid blue; */
 }
 
 .timelineLocators {
   position: relative;
   top: 0rem;
-  background-color: lightskyblue;
   width: 100%;
   height: 1rem;
   overflow: hidden;
+  border-bottom: 1px solid hsl(217 19% 27%);
 }
 
 .timelineRuler {
   position: relative;
   top: 0rem;
-  background-color: lightgray;
   width: 100%;
   height: 1rem;
   overflow: hidden;
@@ -39,46 +34,28 @@
 
 .timelineTick {
   position: absolute;
-  border-left: 1px solid black;
+  border-left: 1px solid hsl(215 20.2% 45.1%);
   height: 0.5rem;
 }
 
 .timelineMajorTick {
   position: absolute;
-  border-left: 2px solid black;
+  border-left: 1px solid hsl(215 20.2% 85.1%);
+  height: 1rem;
 }
 
 .timelineTickLabel {
   top: 0;
   left: 0;
-  /* transform: translate(-50%, -50%); */
   font-size: 0.75rem;
-  margin-left: 0.1rem;
+  margin-left: 0.2rem;
+  color: hsl(215 20.2% 85.1%);
 }
 
 .loop {
   position: absolute;
   height: 100%;
-  border: 2px solid black;
-}
-
-/* .loop:hover {
-  background-color: rgba(0, 0, 0, 0.25);
-  cursor: grab;
-} */
-
-/* .dragHandle {
-  height: '100%';
-  width: '100%';
-  margin-left: '0.7rem';
-  margin-right: '0.7rem';
-  background-color: 'darkskyblue';
-  border: '2px solid red';
-} */
-
-.dragHandle:hover {
-  background-color: rgba(0, 0, 0, 0.25);
-  cursor: grab;
+  background-color: hsla(210, 40%, 98%, 0.1);
 }
 
 .locator:hover {

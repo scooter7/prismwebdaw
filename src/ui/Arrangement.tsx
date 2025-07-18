@@ -183,6 +183,7 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
             >
               {props.tracks.map((track, index) => (
                 <div
+                  key={track.name + index}
                   className={`${styles.trackInfoBox} ${
                     isDragging && index === dragStartIndex.current ? styles.dragging : ''
                   }`}
@@ -258,6 +259,18 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
               overflow: 'hidden',
             }}
           >
+            {props.tracks.map((track, trackIndex) => (
+              <div
+                key={`track-bg-${trackIndex}`}
+                className={trackIndex % 2 === 0 ? styles.trackBgEven : styles.trackBgOdd}
+                style={{
+                  top: `${trackIndex * TRACK_HEIGHT_PX}px`,
+                  height: `${TRACK_HEIGHT_PX}px`,
+                  width: '100%',
+                  position: 'absolute',
+                }}
+              />
+            ))}
             {props.tracks.map((track, trackIndex) =>
               track.regions.map((region, regionIndex) => (
                 <Region
