@@ -25,7 +25,7 @@ export interface TimelineProps {
   setLooping: (looping: boolean) => void;
 }
 
-class TimelineGenerator implements IterableIterator<Location> {
+export class TimelineGenerator implements IterableIterator<Location> {
   private step: Duration;
   private end: Location;
   private current: Location;

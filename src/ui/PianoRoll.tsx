@@ -58,7 +58,7 @@ export const PianoRoll: FunctionComponent<PianoRollProps> = (props) => {
       <div className={styles.gridContainer}>
         <div className={styles.grid} style={{ width: gridWidth, height: gridHeight }}>
           {/* Vertical grid lines */}
-          {Array.from(tickIterator).map((location) => {
+          {Array.from(tickIterator).map((location: Location) => {
             const time = props.converter.convertLocation(location) - regionStartTime;
             if (time < 0) return null;
             return (
