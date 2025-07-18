@@ -250,22 +250,36 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     props.setTracks(cloneDeep(props.project.tracks));
   }
 
+  const updateTracksImmutable = (trackIndex: number, regionIndex: number, newRegion: MidiRegion) => {
+    const newTracks = props.tracks.map((track, tIdx) => {
+      if (tIdx !== trackIndex) return track;
+      const newRegions = track.regions.map((region, rIdx) => {
+        return rIdx === regionIndex ? newRegion : region;
+      });
+      const newTrack = cloneDeep(track);
+      newTrack.regions = newRegions;
+      return newTrack;
+    });
+    props.project.tracks = newTracks;
+    props.setTracks(newTracks);
+  };
+
   function handleMoveRegion(trackIndex: number, regionIndex: number, newPosition: Location) {
-    props.project.tracks[trackIndex].regions[regionIndex].position = newPosition;
-    props.setTracks(cloneDeep(props.project.tracks));
+    const region = cloneDeep(props.tracks[trackIndex].regions[regionIndex]);
+    region.position = newPosition;
+    updateTracksImmutable(trackIndex, regionIndex, region as MidiRegion);
   }
 
   function handleResizeRegion(trackIndex: number, regionIndex: number, newLength: Duration) {
-    props.project.tracks[trackIndex].regions[regionIndex].length = newLength;
-    props.setTracks(cloneDeep(props.project.tracks));
+    const region = cloneDeep(props.tracks[trackIndex].regions[regionIndex]);
+    region.length = newLength;
+    updateTracksImmutable(trackIndex, regionIndex, region as MidiRegion);
   }
 
   const handleUpdateMidiRegion = (updatedRegion: MidiRegion) => {
     if (props.editingRegion) {
       const { trackIndex, regionIndex } = props.editingRegion;
-      const newTracks = cloneDeep(props.tracks);
-      newTracks[trackIndex].regions[regionIndex] = updatedRegion;
-      props.setTracks(newTracks);
+      updateTracksImmutable(trackIndex, regionIndex, updatedRegion);
     }
   };
 

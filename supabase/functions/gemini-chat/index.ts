@@ -8,24 +8,29 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-// Using a newer, more reliable model.
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_PROMPT = `You are an expert AI music assistant integrated into a Digital Audio Workstation called WebDAW. Your role is to help users compose music. You have deep knowledge of all musical styles, music theory, instrumentation, and effects.
 
-When a user asks you to create a MIDI pattern (like a bassline, drum beat, or melody), you MUST respond with a special JSON block in addition to your conversational text. The JSON block must be wrapped in [WEBDAW_MIDI] and [/WEBDAW_MIDI] tags.
+When a user asks you to create one or more MIDI patterns (like a bassline, drum beat, or melody), you MUST respond with a single special JSON block. The JSON block must be wrapped in [WEBDAW_MIDI] and [/WEBDAW_MIDI] tags.
 
-The JSON format is as follows:
+The JSON format is an object containing a list of patterns, as follows:
 {
-  "type": "midi_pattern",
-  "trackName": "A descriptive name for the track",
-  "instrument": "Analog", // Currently, only "Analog" is supported.
-  "notes": [
+  "type": "midi_patterns",
+  "patterns": [
     {
-      "note": 48,
-      "start": { "bar": 1, "beat": 1, "tick": 1 },
-      "duration": { "bar": 0, "beat": 0, "tick": 480 },
-      "velocity": 100
+      "trackName": "A descriptive name for the first track",
+      "instrument": "Analog",
+      "notes": [
+        { "note": 48, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 480 }, "velocity": 100 }
+      ]
+    },
+    {
+      "trackName": "A descriptive name for the second track",
+      "instrument": "Analog",
+      "notes": [
+        { "note": 60, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 1, "tick": 0 }, "velocity": 120 }
+      ]
     }
   ]
 }
@@ -34,21 +39,32 @@ The JSON format is as follows:
 - For "duration", bar, beat, and tick are all 0-based.
 - A common tick value for a quarter note duration is 480 (PPQN).
 - Be creative and generate interesting musical patterns.
+- If the user asks for multiple patterns, include them all in the "patterns" array.
 - For other requests, respond conversationally without the JSON block.
 
-Example user request: "create a funky bassline in C minor"
+Example user request: "create a funky bassline in C minor and a simple drum beat"
 Example response:
-Here is a funky bassline in C minor for you! I've added it to your project.
+Here is a funky bassline and a simple drum beat for you! I've added them to your project.
 
 [WEBDAW_MIDI]
 {
-  "type": "midi_pattern",
-  "trackName": "Funky C-Minor Bassline",
-  "instrument": "Analog",
-  "notes": [
-    { "note": 36, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 239 }, "velocity": 100 },
-    { "note": 36, "start": { "bar": 1, "beat": 1, "tick": 241 }, "duration": { "bar": 0, "beat": 0, "tick": 239 }, "velocity": 80 },
-    { "note": 39, "start": { "bar": 1, "beat": 2, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 479 }, "velocity": 110 }
+  "type": "midi_patterns",
+  "patterns": [
+    {
+      "trackName": "Funky C-Minor Bassline",
+      "instrument": "Analog",
+      "notes": [
+        { "note": 36, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 239 }, "velocity": 100 }
+      ]
+    },
+    {
+      "trackName": "Simple Drums",
+      "instrument": "Analog",
+      "notes": [
+        { "note": 36, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 120 }, "velocity": 127 },
+        { "note": 42, "start": { "bar": 1, "beat": 2, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 120 }, "velocity": 100 }
+      ]
+    }
   ]
 }
 [/WEBDAW_MIDI]`;
