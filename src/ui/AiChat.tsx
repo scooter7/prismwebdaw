@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Bot, User, Loader2 } from 'lucide-react';
+import { supabase } from '../integrations/supabase/client';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -35,26 +36,14 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
     setIsLoading(true);
 
     try {
-      const SUPABASE_URL = "https://yezjxwahexsfbvhfxsji.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inllemp4d2FoZXhzZmJ2aGZ4c2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2OTIyOTAsImV4cCI6MjA2ODI2ODI5MH0.8DH3ggR-jbKVRfZhHfHltk1TPCt30e4eqB4zw2l6w3Y";
-      const functionUrl = `${SUPABASE_URL}/functions/v1/gemini-chat`;
-
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ prompt: input }),
+      const { data, error } = await supabase.functions.invoke('gemini-chat', {
+        body: { prompt: input },
       });
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Request failed with status ${response.status}: ${errorBody}`);
+      if (error) {
+        throw error;
       }
       
-      const data = await response.json();
       let assistantContent = data.response;
 
       const midiRegex = /\[WEBDAW_MIDI\]([\s\S]*?)\[\/WEBDAW_MIDI\]/;

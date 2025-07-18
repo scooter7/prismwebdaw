@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 
 console.log("GEMINI-CHAT FUNCTION: Top-level script execution. Cold start or new instance.");
 
