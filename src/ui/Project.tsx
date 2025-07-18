@@ -262,6 +262,15 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     props.setTracks(cloneDeep(props.project.tracks));
   }
 
+  const handleUpdateMidiRegion = (updatedRegion: MidiRegion) => {
+    if (props.editingRegion) {
+      const { trackIndex, regionIndex } = props.editingRegion;
+      const newTracks = cloneDeep(props.tracks);
+      newTracks[trackIndex].regions[regionIndex] = updatedRegion;
+      props.setTracks(newTracks);
+    }
+  };
+
   //
   // Browser to the left, InfoPanel to the right, in the center stack of Arrangement, Editor
   return (
@@ -381,6 +390,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
               converter={props.project.locationToTime}
               scale={timelineScale}
               end={end}
+              onUpdateRegion={handleUpdateMidiRegion}
             />
           )}
         </div>
