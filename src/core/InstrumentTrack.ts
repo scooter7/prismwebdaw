@@ -199,7 +199,7 @@ export class InstrumentTrack extends AbstractTrack {
     continuationTime?: number,
     discontinuationTime?: number,
   ): void {
-    if (!this.enabled) {
+    if (!this.enabled || !this.isAudioInitialized()) {
       return;
     }
 
