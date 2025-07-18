@@ -20,7 +20,7 @@ import {
   TRACK_HEIGHT_PX,
 } from './Config';
 import { AudioTrack } from '../core/AudioTrack';
-import { AbstractTrack, TrackInterface } from '../core/Track';
+import { AbstractTrack } from '../core/Track';
 
 import styles from './Project.module.css';
 import { Browser } from './Browser';
@@ -289,93 +289,71 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
         looping={looping}
         setLooping={changeLooping}
       />
-      <div className={styles.center}>
-        {props.browserVisible && (
-          <>
-            <div
-              className={styles.browser}
-              style={{
-                width: `${browserWidth}px`,
-                minWidth: `${browserWidth}px`,
-                maxWidth: `${browserWidth}px`,
-              }}
-            >
-              <div className={styles.browserInner}>
-                <Browser
-                  tracks={props.tracks}
-                  totalWidth={totalWidth}
-                  totalHeight={(props.tracks.length + 1) * TRACK_HEIGHT_PX}
-                  scale={timelineScale}
-                  timeSignature={props.project.timeSignature}
-                  converter={props.project.locationToTime}
-                  end={end}
-                  createNewAudioTrackWithRegion={createNewAudioTrackWithRegion}
-                  addRegionToTrack={addRegionToTrack}
-                />
+      <div className="flex-grow flex flex-col overflow-hidden">
+        <div className={styles.center}>
+          {props.browserVisible && (
+            <>
+              <div
+                className={styles.browser}
+                style={{
+                  width: `${browserWidth}px`,
+                  minWidth: `${browserWidth}px`,
+                  maxWidth: `${browserWidth}px`,
+                }}
+              >
+                <div className={styles.browserInner}>
+                  <Browser
+                    tracks={props.tracks}
+                    totalWidth={totalWidth}
+                    totalHeight={(props.tracks.length + 1) * TRACK_HEIGHT_PX}
+                    scale={timelineScale}
+                    timeSignature={props.project.timeSignature}
+                    converter={props.project.locationToTime}
+                    end={end}
+                    createNewAudioTrackWithRegion={createNewAudioTrackWithRegion}
+                    addRegionToTrack={addRegionToTrack}
+                  />
+                </div>
               </div>
-            </div>
-            <div
-              className={styles.separator}
-              onPointerDown={onBeginDragSeparator}
-              onPointerMove={onDragSeparator}
-              onPointerUp={onEndDragSeparator}
-            />
-          </>
-        )}
+              <div
+                className={styles.separator}
+                onPointerDown={onBeginDragSeparator}
+                onPointerMove={onDragSeparator}
+                onPointerUp={onEndDragSeparator}
+              />
+            </>
+          )}
 
-        <Arrangement
-          tracks={props.tracks}
-          updateTrackEnablement={() => props.project.updateTrackEnablement()}
-          appendTrack={appendTrack}
-          moveTrackToPosition={moveTrackToPosition}
-          deleteTrack={deleteTrack}
-          totalWidth={totalWidth}
-          totalHeight={(props.tracks.length + 1) * TRACK_HEIGHT_PX}
-          scale={timelineScale}
-          timeSignature={props.project.timeSignature}
-          converter={props.project.locationToTime}
-          timestamp={timestamp}
-          setTimestamp={changeTimestamp}
-          current={current}
-          setCurrent={changeCurrent}
-          loopStart={loopStart}
-          setLoopStart={changeLoopStart}
-          loopEnd={loopEnd}
-          setLoopEnd={changeLoopEnd}
-          end={end}
-          setEnd={changeEnd}
-          looping={looping}
-          setLooping={changeLooping}
-          onMoveRegion={handleMoveRegion}
-          onResizeRegion={handleResizeRegion}
-          onRegionDoubleClick={props.onRegionDoubleClick}
-        />
-      </div>
-      <div>
-        <Drawer
-          isOpen={props.mixerVisible}
-          onClose={() => props.setMixerVisible(false)}
-          canOutsideClickClose={false}
-          icon="settings"
-          position="bottom"
-          size="75%"
-          title="Mixer"
-          usePortal={false}
-        >
-          <Mixer />
-        </Drawer>
-      </div>
-      <Drawer
-        isOpen={props.editingRegion !== null}
-        onClose={() => props.setEditingRegion(null)}
-        title="Piano Roll Editor"
-        position="bottom"
-        size="50%"
-        hasBackdrop={false}
-        className="bg-background text-foreground"
-      >
-        <div className="p-4 h-full">
-          {props.editingRegion && (
+          <Arrangement
+            tracks={props.tracks}
+            updateTrackEnablement={() => props.project.updateTrackEnablement()}
+            appendTrack={appendTrack}
+            moveTrackToPosition={moveTrackToPosition}
+            deleteTrack={deleteTrack}
+            totalWidth={totalWidth}
+            totalHeight={(props.tracks.length + 1) * TRACK_HEIGHT_PX}
+            scale={timelineScale}
+            timeSignature={props.project.timeSignature}
+            converter={props.project.locationToTime}
+            timestamp={timestamp}
+            setTimestamp={changeTimestamp}
+            current={current}
+            setCurrent={changeCurrent}
+            loopStart={loopStart}
+            setLoopStart={changeLoopStart}
+            loopEnd={loopEnd}
+            setLoopEnd={changeLoopEnd}
+            end={end}
+            setEnd={changeEnd}
+            looping={looping}
+            setLooping={changeLooping}
+            onMoveRegion={handleMoveRegion}
+            onResizeRegion={handleResizeRegion}
+            onRegionDoubleClick={props.onRegionDoubleClick}
+          />
+        </div>
+        {props.editingRegion && (
+          <div className={styles.editorPane}>
             <PianoRoll
               region={
                 props.project.tracks[props.editingRegion.trackIndex].regions[
@@ -388,8 +366,20 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
               end={end}
               onUpdateRegion={handleUpdateMidiRegion}
             />
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+      <Drawer
+        isOpen={props.mixerVisible}
+        onClose={() => props.setMixerVisible(false)}
+        canOutsideClickClose={false}
+        icon="settings"
+        position="bottom"
+        size="75%"
+        title="Mixer"
+        usePortal={false}
+      >
+        <Mixer />
       </Drawer>
     </div>
   );

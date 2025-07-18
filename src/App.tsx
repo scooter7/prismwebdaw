@@ -236,7 +236,16 @@ function App() {
     const track = project.tracks[trackIndex];
     const region = track.regions[regionIndex];
     if (track.type === 'instrument' && region) {
-      setEditingRegion({ trackIndex, regionIndex });
+      // Toggle editor: if it's the same region, close it. Otherwise, open the new one.
+      if (
+        editingRegion &&
+        editingRegion.trackIndex === trackIndex &&
+        editingRegion.regionIndex === regionIndex
+      ) {
+        setEditingRegion(null);
+      } else {
+        setEditingRegion({ trackIndex, regionIndex });
+      }
     }
   };
 

@@ -37,3 +37,10 @@
   border-left: 2px solid gainsboro;
   border-right: 2px solid gainsboro;
 }
+
+.editorPane {
+  flex-shrink: 0;
+  height: 300px;
+  border-top: 1px solid hsl(217 19% 27%);
+  background-color: hsl(222 12% 15%);
+}

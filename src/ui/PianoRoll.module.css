@@ -91,5 +91,29 @@
   box-sizing: border-box;
   opacity: 0.9;
   z-index: 2;
-  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+}
+
+.handleLeft,
+.handleRight {
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  position: absolute;
+  z-index: 11;
+}
+
+.handleLeft {
+  left: 0;
+}
+
+.handleRight {
+  right: 0;
+}
+
+.handleMove {
+  width: 100%;
+  height: 100%;
+  cursor: move;
 }
