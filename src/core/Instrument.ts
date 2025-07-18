@@ -6,9 +6,10 @@ import { NamedObject } from './Common';
 export interface Instrument extends NamedObject {
   /**
    * Initializes the instrument with the given audio context.
+   * This can be an asynchronous operation, e.g. for loading samples.
    * @param context The audio context to use.
    */
-  initialize(context: AudioContext): void;
+  initialize(context: AudioContext): Promise<void>;
 
   /**
    * Connects the instrument's output to a destination node.

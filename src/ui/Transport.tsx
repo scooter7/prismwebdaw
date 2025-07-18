@@ -105,9 +105,9 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
     }
   }
 
-  function play() {
+  async function play() {
     setPlayback(PlaybackState.Playing);
-    engine.start();
+    await engine.start();
   }
 
   function pause() {
@@ -115,9 +115,9 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
     engine.stop();
   }
 
-  function record() {
+  async function record() {
     setPlayback(PlaybackState.Recording);
-    engine.start();
+    await engine.start();
   }
 
   function zoomIn() {

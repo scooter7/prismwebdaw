@@ -189,19 +189,20 @@ export class Engine {
   /**
    * Start playback of audio and MIDI by the rendering engine.
    */
-  public start(): void {
+  public async start(): Promise<void> {
     if (!this._playing) {
       if (this.context.state === 'suspended') {
-        this.context.resume();
+        await this.context.resume();
       }
 
       // Stop any playback that is currently happening; it's no-op when nothing is playing
       this.silenceTracks();
 
       // Bind tracks to audio destination; this is a no-op when those bindings already exist
-      this.forAllSchedulables((track) => {
-        track.initializeAudio(this.context);
-      });
+      await Promise.all(
+        this._project.tracks.map((track) => track.initializeAudio(this.context)),
+      );
+      await this._metronome.initializeAudio(this.context);
 
       // Reset the last scheduled audio time to the beginning of the arrangement
       const converter = this.project.locationToTime;
@@ -603,10 +604,10 @@ export class Engine {
    *
    * @param event The track event to handle.
    */
-  public handleTrackEvent(event: TrackEvent): void {
+  public async handleTrackEvent(event: TrackEvent): Promise<void> {
     switch (event.type) {
       case TrackEventType.Added:
-        event.track.initializeAudio(this.context);
+        await event.track.initializeAudio(this.context);
         break;
       case TrackEventType.Removed:
         event.track.stop();

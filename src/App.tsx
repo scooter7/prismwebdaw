@@ -64,6 +64,7 @@ import { MidiRegion } from './core/MidiRegion';
 import { Duration, Location } from './core/Common';
 import { MidiDataType, NoteMidiData } from './core/MidiData';
 import { COLORS } from './ui/Config';
+import { SoundFontInstrument } from './instruments/SoundFontInstrument';
 
 const audioContext = new AudioContext();
 
@@ -217,7 +218,7 @@ function App() {
 
     const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
 
-    const instrument = new Analog();
+    const instrument = new SoundFontInstrument('acoustic_grand_piano');
     const newTrack = new InstrumentTrack(trackName, randomColor, false, instrument);
     newTrack.regions.push(region);
 

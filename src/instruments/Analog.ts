@@ -17,7 +17,7 @@ export class Analog implements Instrument {
   private output: GainNode | null = null;
   private activeOscillators: Map<number, ActiveNote> = new Map();
 
-  initialize(context: AudioContext) {
+  async initialize(context: AudioContext): Promise<void> {
     this.context = context;
     this.output = this.context.createGain();
   }

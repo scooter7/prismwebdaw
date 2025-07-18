@@ -5,7 +5,7 @@ import { Instrument } from '../core/Instrument';
 export class Drums implements Instrument {
   readonly name = 'Drums';
 
-  initialize(context: AudioContext): void {
+  async initialize(context: AudioContext): Promise<void> {
     // Not implemented
   }
 

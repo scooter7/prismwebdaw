@@ -166,7 +166,7 @@ export class AudioTrack extends AbstractTrack {
     this.audioEffects = effects;
   }
 
-  initializeAudio(context: AudioContext): void {
+  async initializeAudio(context: AudioContext): Promise<void> {
     if (this.audioState === null) {
       const channelStripInput = context.createGain();
       const gain = context.createGain();

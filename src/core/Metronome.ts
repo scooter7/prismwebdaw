@@ -40,7 +40,7 @@ export class Metronome implements PlaybackScheduling, NamedObject, MutableObject
     });
   }
 
-  initializeAudio(context: AudioContext): void {
+  async initializeAudio(context: AudioContext): Promise<void> {
     if (this._audioState === null) {
       const gain = context.createGain();
       gain.connect(context.destination);

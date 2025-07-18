@@ -19,7 +19,7 @@ export interface PlaybackScheduling {
    * @param context the audio context to use for initialization
    * @throws {Error} if audio is already initialized for this track using a different audio context.
    */
-  initializeAudio(context: AudioContext): void;
+  initializeAudio(context: AudioContext): Promise<void>;
 
   /**
    * Deinitialize audio for this track.
@@ -214,7 +214,7 @@ export abstract class AbstractTrack implements TrackInterface, ToJson {
     }
   }
 
-  abstract initializeAudio(context: AudioContext): void;
+  abstract initializeAudio(context: AudioContext): Promise<void>;
   abstract deinitializeAudio(): void;
   abstract isAudioInitialized(): boolean;
 

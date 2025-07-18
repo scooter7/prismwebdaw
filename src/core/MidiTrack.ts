@@ -49,7 +49,7 @@ export class MidiTrack extends AbstractTrack {
     AbstractTrack.registerFactory(MidiTrack.TYPE_TAG, MidiTrack.fromJson);
   }
 
-  initializeAudio(context: AudioContext): void {
+  async initializeAudio(context: AudioContext): Promise<void> {
     /* No audio nodes on pure MIDI tracks */
   }
 
