@@ -26,28 +26,30 @@ export class SoundFontInstrument implements Instrument {
   }
 
   async initialize(context: AudioContext): Promise<void> {
-    // Use the existing AudioContext with Tone.js
-    Tone.setContext(context);
+    return new Promise((resolve) => {
+      // Use the existing AudioContext with Tone.js
+      Tone.setContext(context);
 
-    let urls, baseUrl;
-    if (this.name === 'drums') {
-        urls = drumSamples;
-        baseUrl = drumBaseUrl;
-    } else { // default to piano
-        this.name = 'acoustic_grand_piano'; // ensure name is correct for logging
-        urls = pianoSamples;
-        baseUrl = pianoBaseUrl;
-    }
+      let urls, baseUrl;
+      if (this.name === 'drums') {
+          urls = drumSamples;
+          baseUrl = drumBaseUrl;
+      } else { // default to piano
+          this.name = 'acoustic_grand_piano'; // ensure name is correct for logging
+          urls = pianoSamples;
+          baseUrl = pianoBaseUrl;
+      }
 
-    this.sampler = new Tone.Sampler({
-      urls,
-      baseUrl,
-      release: 1,
+      this.sampler = new Tone.Sampler({
+        urls,
+        baseUrl,
+        release: 1,
+        onload: () => {
+          console.log(`Tone.js Sampler instrument '${this.name}' loaded.`);
+          resolve();
+        }
+      });
     });
-
-    // Wait for the sampler to load all the audio files
-    await this.sampler.loaded;
-    console.log(`Tone.js Sampler instrument '${this.name}' loaded.`);
   }
 
   connect(destination: AudioNode): void {
