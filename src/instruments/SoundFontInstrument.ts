@@ -15,7 +15,7 @@ const drumSamples = {
   'A#2': 'hihat-open.mp3',// MIDI 46 (Open Hi-hat)
   'C#3': 'crash.mp3',     // MIDI 49
 };
-const drumBaseUrl = 'https://cdn.jsdelivr.net/gh/tonejs/audio@main/drum-machine/';
+const drumBaseUrl = 'https://raw.githubusercontent.com/tonejs/audio/main/drum-machine/';
 
 export class SoundFontInstrument implements Instrument {
   private sampler: Tone.Sampler | null = null;
