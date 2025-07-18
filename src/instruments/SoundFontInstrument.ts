@@ -15,7 +15,7 @@ const drumSamples = {
   'A#2': 'hihat-open.mp3',// MIDI 46 (Open Hi-hat)
   'C#3': 'crash.mp3',     // MIDI 49
 };
-const drumBaseUrl = 'https://raw.githubusercontent.com/tonejs/audio/main/drum-machine/';
+const drumBaseUrl = 'https://tonejs.github.io/audio/drum-machine/';
 
 export class SoundFontInstrument implements Instrument {
   private sampler: Tone.Sampler | null = null;
@@ -45,11 +45,11 @@ export class SoundFontInstrument implements Instrument {
         baseUrl,
         release: 1,
         onload: () => {
-          console.log(`Tone.js Sampler instrument '${this.name}' loaded.`);
+          console.log(`Tone.js Sampler instrument '${this.name}' loaded successfully from ${baseUrl}.`);
           resolve();
         },
         onerror: (error) => {
-          console.error(`Error loading sample for ${this.name}:`, error);
+          console.error(`Error loading sample for ${this.name} from base URL ${baseUrl}. Full error:`, error);
           reject(error);
         }
       });
