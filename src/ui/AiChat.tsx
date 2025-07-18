@@ -9,7 +9,11 @@ interface Message {
   content: string;
 }
 
-export const AiChat: FunctionComponent = () => {
+interface AiChatProps {
+  onMidiPatternGenerated: (pattern: any) => void;
+}
+
+export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -51,8 +55,27 @@ export const AiChat: FunctionComponent = () => {
       }
       
       const data = await response.json();
+      let assistantContent = data.response;
+
+      // Check for the special MIDI block
+      const midiRegex = /\[WEBDAW_MIDI\]([\s\S]*?)\[\/WEBDAW_MIDI\]/;
+      const midiMatch = assistantContent.match(midiRegex);
+
+      if (midiMatch && midiMatch[1]) {
+        try {
+          const midiJsonString = midiMatch[1];
+          const midiPattern = JSON.parse(midiJsonString);
+          onMidiPatternGenerated(midiPattern);
+          
+          // Remove the block from the displayed message
+          assistantContent = assistantContent.replace(midiRegex, '').trim();
+        } catch (jsonError) {
+          console.error("Failed to parse MIDI JSON from AI response:", jsonError);
+          // Don't block the text response from showing
+        }
+      }
       
-      const assistantMessage: Message = { role: 'assistant', content: data.response };
+      const assistantMessage: Message = { role: 'assistant', content: assistantContent };
       setMessages((prev) => [...prev, assistantMessage]);
 
     } catch (err: any) {

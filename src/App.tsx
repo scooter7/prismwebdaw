@@ -66,6 +66,12 @@ import { parseMidiFile } from './controller/MidiImport';
 import { TrackEventType } from './core/Events';
 import { AiChat } from './ui/AiChat';
 import { Drawer } from '@blueprintjs/core';
+import { InstrumentTrack } from './core/InstrumentTrack';
+import { Analog } from './instruments/Analog';
+import { MidiRegion } from './core/MidiRegion';
+import { Duration, Location } from './core/Common';
+import { MidiDataType, NoteMidiData } from './core/MidiData';
+import { COLORS } from './ui/Config';
 
 const audioContext = new AudioContext();
 
@@ -184,6 +190,55 @@ function App() {
         midiFileInputRef.current.value = '';
       }
     }
+  };
+
+  const handleMidiPatternGenerated = (pattern: any) => {
+    if (pattern.type !== 'midi_pattern' || !pattern.notes || pattern.notes.length === 0) {
+      console.error('Invalid MIDI pattern received from AI', pattern);
+      return;
+    }
+
+    const timeSignature = project.timeSignature;
+
+    const notes: NoteMidiData[] = pattern.notes.map((note: any) => ({
+      type: MidiDataType.Note,
+      note: note.note,
+      velocity: note.velocity,
+      start: new Location(note.start.bar, note.start.beat, note.start.tick),
+      duration: new Duration(note.duration.bar, note.duration.beat, note.duration.tick),
+    }));
+
+    // Calculate region boundaries
+    const firstNoteStart = notes.reduce((min, p) => (p.start.compare(min.start) < 0 ? p : min))
+      .start;
+    const lastNoteEnd = notes.reduce((max, p) => {
+      const end = p.start.add(p.duration, timeSignature);
+      const maxEnd = max.start.add(max.duration, timeSignature);
+      return end.compare(maxEnd) > 0 ? p : max;
+    });
+    const lastNoteEndLocation = lastNoteEnd.start.add(lastNoteEnd.duration, timeSignature);
+    const regionDuration = firstNoteStart.diff(lastNoteEndLocation, timeSignature);
+
+    const trackName = pattern.trackName || 'AI Generated Track';
+    const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+    const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
+
+    // For now, we only support the Analog instrument
+    const instrument = new Analog();
+    const newTrack = new InstrumentTrack(trackName, randomColor, false, instrument);
+    newTrack.regions.push(region);
+
+    // Add track to project and update state
+    const updatedTracks = [...project.tracks, newTrack];
+    project.tracks = updatedTracks;
+
+    engine.current.handleTrackEvent({
+      type: TrackEventType.Added,
+      track: newTrack,
+    });
+
+    setTracks([...updatedTracks]);
   };
 
   return (
@@ -456,7 +511,7 @@ function App() {
           <p className="text-muted-foreground mb-4">
             Your creative partner for making music. Ask for ideas, instruments, or feedback.
           </p>
-          <AiChat />
+          <AiChat onMidiPatternGenerated={handleMidiPatternGenerated} />
         </div>
       </Drawer>
     </EngineContext.Provider>
