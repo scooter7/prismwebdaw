@@ -30,7 +30,9 @@ export class SoundFontInstrument implements Instrument {
       // Use the existing AudioContext with Tone.js
       Tone.setContext(context);
 
-      let urls, baseUrl;
+      let urls: { [key: string]: string; };
+      let baseUrl: string;
+
       if (this.name === 'drums') {
           urls = drumSamples;
           baseUrl = drumBaseUrl;
