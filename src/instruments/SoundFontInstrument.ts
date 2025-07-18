@@ -6,13 +6,13 @@ const pianoSamples = {
 };
 const pianoBaseUrl = 'https://tonejs.github.io/audio/salamander/';
 
-// Using the Kit8 samples as requested, served from a reliable CDN.
+// Using the Kit8 samples as requested, served from a Supabase bucket.
 const drumSamples = {
   'C2': 'kick.mp3',    // MIDI 36
   'D2': 'snare.mp3',   // MIDI 38
   'F#2': 'hihat.mp3',  // MIDI 42 (Closed)
 };
-const drumBaseUrl = 'https://cdn.jsdelivr.net/gh/tonejs/audio@main/drum-samples/Kit8/';
+const drumBaseUrl = 'https://yezjxwahexsfbvhfxsji.supabase.co/storage/v1/object/public/samples/';
 
 export class SoundFontInstrument implements Instrument {
   private sampler: Tone.Sampler | null = null;
