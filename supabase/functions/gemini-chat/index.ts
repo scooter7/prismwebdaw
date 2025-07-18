@@ -71,14 +71,14 @@ Here is a funky bassline and a simple drum beat for you! I've added them to your
 
 const handler = async (req: Request): Promise<Response> => {
   console.log(`GEMINI-CHAT FUNCTION: Request received: ${req.method} ${req.url}`);
-  console.log("GEMINI-CHAT FUNCTION: Request headers:", Object.fromEntries(req.headers));
+
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log("GEMINI-CHAT FUNCTION: Handling OPTIONS request.");
+    return new Response('ok', { headers: corsHeaders })
+  }
 
   try {
-    if (req.method === 'OPTIONS') {
-      console.log("GEMINI-CHAT FUNCTION: Handling OPTIONS request.");
-      return new Response(null, { headers: corsHeaders, status: 200 })
-    }
-
     console.log("GEMINI-CHAT FUNCTION: Handling POST request");
     const { prompt } = await req.json();
 
@@ -142,12 +142,4 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-serve(handler, {
-  onListen({ port, hostname }) {
-    console.log(`GEMINI-CHAT FUNCTION: Server listening on http://${hostname}:${port}`);
-  },
-  onError(error) {
-    console.error("GEMINI-CHAT FUNCTION: Uncaught error in serve:", error);
-    return new Response("Internal Server Error", { status: 500 });
-  },
-});
+serve(handler);
