@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 console.log("GEMINI-CHAT FUNCTION: Top-level script execution. Cold start or new instance.");
 
@@ -9,8 +10,16 @@ const corsHeaders = {
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`;
 
-const SYSTEM_PROMPT = `You are an expert AI music assistant integrated into a Digital Audio Workstation called WebDAW. Your role is to help users compose music. You have deep knowledge of all musical styles, music theory, instrumentation, and effects.
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+)
+
+const SYSTEM_PROMPT_BASE = `You are an expert AI music assistant integrated into a Digital Audio Workstation called WebDAW. Your role is to help users compose music. You have deep knowledge of all musical styles, music theory, instrumentation, and effects.
+
+You can guide users on how to create and edit tracks to optimize their creations, using your knowledge of music theory and styles.
 
 When a user asks you to create one or more MIDI patterns (like a bassline, drum beat, or melody), you MUST respond with a single special JSON block. The JSON block must be wrapped in [WEBDAW_MIDI] and [/WEBDAW_MIDI] tags.
 
@@ -36,38 +45,28 @@ The JSON format is an object containing a list of patterns, as follows:
 - Be creative and generate interesting musical patterns.
 - If the user asks for multiple patterns, include them all in the "patterns" array.
 - For other requests, respond conversationally without the JSON block.
+`;
 
-Example user request: "create a funky bassline in C minor and a simple drum beat"
-Example response:
-Here is a funky bassline and a simple drum beat for you! I've added them to your project.
-
-[WEBDAW_MIDI]
-{
-  "type": "midi_patterns",
-  "patterns": [
-    {
-      "trackName": "Funky C-Minor Bassline",
-      "instrument": "Analog",
-      "notes": [
-        { "note": 36, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 239 }, "velocity": 100 }
-      ]
-    },
-    {
-      "trackName": "Simple Drums",
-      "instrument": "drums",
-      "notes": [
-        { "note": 36, "start": { "bar": 1, "beat": 1, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 120 }, "velocity": 127 },
-        { "note": 38, "start": { "bar": 1, "beat": 2, "tick": 1 }, "duration": { "bar": 0, "beat": 0, "tick": 120 }, "velocity": 100 }
-      ]
-    }
-  ]
+async function generateEmbedding(text: string) {
+  const response = await fetch(GEMINI_EMBEDDING_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: "models/text-embedding-004",
+      content: { parts: [{ text }] }
+    }),
+  });
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Failed to generate embedding: ${errorBody}`);
+  }
+  const { embedding } = await response.json();
+  return embedding.values;
 }
-[/WEBDAW_MIDI]`;
 
 const handler = async (req: Request): Promise<Response> => {
   console.log(`GEMINI-CHAT FUNCTION: Request received: ${req.method} ${req.url}`);
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log("GEMINI-CHAT FUNCTION: Handling OPTIONS request.");
     return new Response('ok', { headers: corsHeaders })
@@ -93,7 +92,30 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const fullPrompt = `${SYSTEM_PROMPT}\n\nUser's request: "${prompt}"`;
+    // RAG Part: Find relevant documents
+    const queryEmbedding = await generateEmbedding(prompt);
+    
+    const { data: documents, error: matchError } = await supabaseAdmin.rpc('match_music_theory_docs', {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.7, // Adjust this threshold as needed
+      match_count: 5,       // Get top 5 most relevant chunks
+    });
+
+    if (matchError) {
+      console.error("Error matching documents:", matchError);
+    }
+
+    let contextText = "";
+    if (documents && documents.length > 0) {
+      contextText = documents.map((doc: any) => `- ${doc.content}`).join('\n');
+    }
+
+    let systemPrompt = SYSTEM_PROMPT_BASE;
+    if (contextText) {
+      systemPrompt += `\n\nHere is some relevant information from your knowledge base to help you answer the user's request:\n${contextText}`;
+    }
+
+    const fullPrompt = `${systemPrompt}\n\nUser's request: "${prompt}"`;
 
     console.log("GEMINI-CHAT FUNCTION: Calling Gemini API...");
     const geminiResponse = await fetch(GEMINI_API_URL, {
