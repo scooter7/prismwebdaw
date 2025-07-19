@@ -32,6 +32,9 @@ import { PianoRoll } from './PianoRoll';
 import { MidiRegion } from '../core/MidiRegion';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../components/ui/sheet';
 import { Button } from '../components/ui/button';
+import { InstrumentTrack } from '../core/InstrumentTrack';
+import { MusicPrism } from '../instruments/MusicPrism';
+import { WamGui } from './WamGui';
 
 export type ProjectProps = {
   project: ProjectObj;
@@ -44,6 +47,7 @@ export type ProjectProps = {
   editingRegion: { trackIndex: number; regionIndex: number } | null;
   setEditingRegion: (region: { trackIndex: number; regionIndex: number } | null) => void;
   onRegionDoubleClick: (trackIndex: number, regionIndex: number) => void;
+  appendTrack: (trackType: string) => void;
 };
 
 export const Project: FunctionComponent<ProjectProps> = (props) => {
@@ -73,20 +77,6 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
 
     props.project.deleteTrack(index);
     props.setTracks([...props.project.tracks]);
-  }
-
-  function appendTrack(trackType: string) {
-    if (trackType === 'audio') {
-      const track = new AudioTrack();
-      props.project.appendTrack(track);
-
-      engine.handleTrackEvent({
-        type: TrackEventType.Added,
-        track: track,
-      });
-
-      props.setTracks([...props.project.tracks]);
-    }
   }
 
   const changeLooping = (looping: boolean) => {
@@ -285,6 +275,13 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     }
   };
 
+  const editorTrack = props.editingRegion ? props.tracks[props.editingRegion.trackIndex] : null;
+  const editorInstrument =
+    editorTrack && editorTrack.type === 'instrument'
+      ? (editorTrack as InstrumentTrack).instrument
+      : null;
+  const isWamEditor = editorInstrument instanceof MusicPrism;
+
   return (
     <div className="flex flex-col flex-grow overflow-hidden bg-background text-foreground">
       <Transport
@@ -366,7 +363,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           <Arrangement
             tracks={props.tracks}
             updateTrackEnablement={() => props.project.updateTrackEnablement()}
-            appendTrack={appendTrack}
+            appendTrack={props.appendTrack}
             moveTrackToPosition={moveTrackToPosition}
             deleteTrack={deleteTrack}
             totalWidth={totalWidth}
@@ -393,18 +390,22 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
         </div>
         {props.editingRegion && (
           <div className={styles.editorPane}>
-            <PianoRoll
-              region={
-                props.project.tracks[props.editingRegion.trackIndex].regions[
-                  props.editingRegion.regionIndex
-                ] as MidiRegion
-              }
-              timeSignature={props.project.timeSignature}
-              converter={props.project.locationToTime}
-              scale={timelineScale}
-              end={end}
-              onUpdateRegion={handleUpdateMidiRegion}
-            />
+            {isWamEditor ? (
+              <WamGui instrument={editorInstrument as MusicPrism} />
+            ) : (
+              <PianoRoll
+                region={
+                  props.project.tracks[props.editingRegion.trackIndex].regions[
+                    props.editingRegion.regionIndex
+                  ] as MidiRegion
+                }
+                timeSignature={props.project.timeSignature}
+                converter={props.project.locationToTime}
+                scale={timelineScale}
+                end={end}
+                onUpdateRegion={handleUpdateMidiRegion}
+              />
+            )}
           </div>
         )}
       </div>

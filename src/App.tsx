@@ -57,6 +57,9 @@ import { MidiDataType, NoteMidiData } from './core/MidiData';
 import { COLORS } from './ui/Config';
 import { SoundFontInstrument } from './instruments/SoundFontInstrument';
 import { Instrument } from './core/Instrument';
+import { AbstractTrack } from './core/Track';
+import { AudioTrack } from './core/AudioTrack';
+import { MusicPrism } from './instruments/MusicPrism';
 
 const audioContext = new AudioContext();
 
@@ -153,6 +156,27 @@ function App() {
       setConfirmStopAudio(true);
     } else {
       action();
+    }
+  }
+
+  function appendTrack(trackType: string) {
+    let newTrack: AbstractTrack | null = null;
+    if (trackType === 'audio') {
+      newTrack = new AudioTrack();
+    } else if (trackType === 'music-prism') {
+      const instrument = new MusicPrism();
+      newTrack = new InstrumentTrack('Music Prism', '#DA70D6', false, instrument);
+    }
+
+    if (newTrack) {
+      project.appendTrack(newTrack);
+
+      engine.current.handleTrackEvent({
+        type: TrackEventType.Added,
+        track: newTrack,
+      });
+
+      setTracks([...project.tracks]);
     }
   }
 
@@ -341,6 +365,7 @@ function App() {
               editingRegion={editingRegion}
               setEditingRegion={setEditingRegion}
               onRegionDoubleClick={handleRegionDoubleClick}
+              appendTrack={appendTrack}
             />
           </AudioFileManagerContext.Provider>
         </main>

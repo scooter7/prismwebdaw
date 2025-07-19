@@ -17,6 +17,12 @@ import {
 } from './Config';
 import { Button } from '../components/ui/button';
 import { Duration, Location } from '../core/Common';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 
 /**
  * Properties required to render the Arrangement component.
@@ -219,10 +225,22 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
                 className="flex items-center justify-center"
                 style={{ height: TRACK_HEIGHT_PX }}
               >
-                <Button variant="outline" size="sm" onClick={() => props.appendTrack('audio')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Track
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Track
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => props.appendTrack('audio')}>
+                      Audio Track
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => props.appendTrack('music-prism')}>
+                      Music Prism Instrument
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
