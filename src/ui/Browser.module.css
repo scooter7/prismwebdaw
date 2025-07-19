@@ -13,11 +13,6 @@
                                   supported by Chrome and Opera */
 }
 
-.notDownloaded {
-  color: #ccc;
-  filter: grayscale(100%);
-}
-
 .canDrag {
   cursor: grab;
 }
