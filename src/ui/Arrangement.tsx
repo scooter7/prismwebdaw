@@ -146,7 +146,7 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
   }
 
   return (
-    <div className={`${styles.arrangement} ${styles.noselect}`}>
+    <div className={`${styles.arrangement} ${styles.noselect} dark`}>
       <div className={styles.timelineRow}>
         <div
           id="timelineScroll"

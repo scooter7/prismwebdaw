@@ -150,7 +150,7 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 p-2 border-b">
+    <div className="flex flex-wrap items-center gap-x-4 p-2 border-b bg-muted/40">
       <div className="flex items-center space-x-1">
         <Button variant="ghost" size="icon" onClick={onBegin}><StepBack /></Button>
         <Button variant="ghost" size="icon" onClick={onBackward}><Rewind /></Button>

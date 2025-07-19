@@ -325,10 +325,10 @@ function App() {
       </Dialog>
 
       <div
-        className="h-screen max-h-screen w-screen flex flex-col bg-background text-foreground"
+        className="h-screen max-h-screen w-screen flex flex-row bg-background text-foreground"
         onClick={resumeAudio}
       >
-        <main className="flex-grow flex flex-col overflow-hidden dark bg-background text-foreground">
+        <main className="flex-grow flex flex-col overflow-hidden bg-background text-foreground">
           <AudioFileManagerContext.Provider value={audioFileManager.current}>
             <Project
               project={project}
