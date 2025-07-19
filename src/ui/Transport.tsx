@@ -151,7 +151,7 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 p-2 border-b bg-muted">
+    <div className="flex items-center gap-x-2 p-2 border-b bg-muted overflow-x-auto">
       <div className="flex items-center space-x-1">
         <Button variant="ghost" size="icon" onClick={onBegin} className="h-7 w-7"><StepBack /></Button>
         <Button variant="ghost" size="icon" onClick={onBackward} className="h-7 w-7"><Rewind /></Button>
@@ -168,14 +168,14 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
       </div>
       <div className="flex items-center space-x-2">
         <Label className="text-xs">BPM</Label>
-        <Input className="w-16 h-7 text-sm" value={bpm.toFixed(0)} onChange={(e) => setBpm(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
+        <Input className="w-16 h-7 text-sm bg-transparent border-0 focus-visible:ring-1" value={bpm.toFixed(0)} onChange={(e) => setBpm(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
       </div>
       <div className="flex items-center space-x-2">
         <Label className="text-xs">Signature</Label>
         <div className="flex items-center">
-          <Input className="w-10 h-7 text-sm" value={numerator.toFixed(0)} onChange={(e) => setNumerator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
+          <Input className="w-10 h-7 text-sm bg-transparent border-0 focus-visible:ring-1" value={numerator.toFixed(0)} onChange={(e) => setNumerator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
           <span className="mx-1">/</span>
-          <Input className="w-10 h-7 text-sm" value={denominator.toFixed(0)} onChange={(e) => setDenominator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
+          <Input className="w-10 h-7 text-sm bg-transparent border-0 focus-visible:ring-1" value={denominator.toFixed(0)} onChange={(e) => setDenominator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
         </div>
       </div>
       <Time label="Time" timestamp={props.timestamp} setTimestamp={props.setTimestamp} />

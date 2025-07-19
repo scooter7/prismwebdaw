@@ -36,24 +36,24 @@ export const Location: FunctionComponent<Props> = (props) => {
 
   return (
     <div>
-      <Label className="text-xs">{props.label}</Label>
+      <Label className="text-xs text-muted-foreground">{props.label}</Label>
       <div className="flex items-center space-x-1">
         <Input
-          className="w-12 h-8 text-center"
+          className="w-12 h-7 text-center bg-transparent border-0 focus-visible:ring-1"
           value={props.location.bar.toString()}
           onChange={(e) => handleInputChange('bar', e.target.value)}
           maxLength={3}
         />
-        <span>:</span>
+        <span className="text-muted-foreground">:</span>
         <Input
-          className="w-10 h-8 text-center"
+          className="w-10 h-7 text-center bg-transparent border-0 focus-visible:ring-1"
           value={props.location.beat.toString()}
           onChange={(e) => handleInputChange('beat', e.target.value)}
           maxLength={2}
         />
-        <span>:</span>
+        <span className="text-muted-foreground">:</span>
         <Input
-          className="w-12 h-8 text-center"
+          className="w-12 h-7 text-center bg-transparent border-0 focus-visible:ring-1"
           value={props.location.tick.toString()}
           onChange={(e) => handleInputChange('tick', e.target.value)}
           maxLength={4}

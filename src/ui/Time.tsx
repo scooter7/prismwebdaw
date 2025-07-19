@@ -41,15 +41,15 @@ export const Time: FunctionComponent<Props> = (props) => {
 
   return (
     <div>
-      <Label className="text-xs">{props.label}</Label>
+      <Label className="text-xs text-muted-foreground">{props.label}</Label>
       <div className="flex items-center space-x-1">
-        <Input className="w-10 h-8 text-center" value={hours.toString().padStart(2, '0')} onChange={(e) => handleInputChange('h', e.target.value)} maxLength={2} />
-        <span>:</span>
-        <Input className="w-10 h-8 text-center" value={minutes.toString().padStart(2, '0')} onChange={(e) => handleInputChange('m', e.target.value)} maxLength={2} />
-        <span>:</span>
-        <Input className="w-10 h-8 text-center" value={seconds.toString().padStart(2, '0')} onChange={(e) => handleInputChange('s', e.target.value)} maxLength={2} />
-        <span>:</span>
-        <Input className="w-12 h-8 text-center" value={milliseconds.toString().padStart(3, '0')} onChange={(e) => handleInputChange('ms', e.target.value)} maxLength={3} />
+        <Input className="w-10 h-7 text-center bg-transparent border-0 focus-visible:ring-1" value={hours.toString().padStart(2, '0')} onChange={(e) => handleInputChange('h', e.target.value)} maxLength={2} />
+        <span className="text-muted-foreground">:</span>
+        <Input className="w-10 h-7 text-center bg-transparent border-0 focus-visible:ring-1" value={minutes.toString().padStart(2, '0')} onChange={(e) => handleInputChange('m', e.target.value)} maxLength={2} />
+        <span className="text-muted-foreground">:</span>
+        <Input className="w-10 h-7 text-center bg-transparent border-0 focus-visible:ring-1" value={seconds.toString().padStart(2, '0')} onChange={(e) => handleInputChange('s', e.target.value)} maxLength={2} />
+        <span className="text-muted-foreground">:</span>
+        <Input className="w-12 h-7 text-center bg-transparent border-0 focus-visible:ring-1" value={milliseconds.toString().padStart(3, '0')} onChange={(e) => handleInputChange('ms', e.target.value)} maxLength={3} />
       </div>
     </div>
   );
