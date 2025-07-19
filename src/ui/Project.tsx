@@ -1,4 +1,5 @@
 import { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Transport } from './Transport';
 import { Mixer } from './Mixer';
@@ -30,6 +31,7 @@ import { cloneDeep } from 'lodash';
 import { PianoRoll } from './PianoRoll';
 import { MidiRegion } from '../core/MidiRegion';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../components/ui/sheet';
+import { Button } from '../components/ui/button';
 
 export type ProjectProps = {
   project: ProjectObj;
@@ -284,7 +286,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
   };
 
   return (
-    <div className="flex flex-col flex-grow overflow-hidden">
+    <div className="flex flex-col flex-grow overflow-hidden bg-background text-foreground">
       <Transport
         project={props.project}
         totalWidth={totalWidth}
@@ -305,7 +307,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
       />
       <div className="flex-grow flex flex-col overflow-hidden">
         <div className={styles.center}>
-          {props.browserVisible && (
+          {props.browserVisible ? (
             <>
               <div
                 className={styles.browser}
@@ -315,6 +317,17 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
                   maxWidth: `${browserWidth}px`,
                 }}
               >
+                <div className="p-2 border-b flex justify-between items-center">
+                  <h2 className="font-semibold">Library</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => props.setBrowserVisible(false)}
+                  >
+                    <ChevronLeft />
+                  </Button>
+                </div>
                 <div className={styles.browserInner}>
                   <Browser
                     tracks={props.tracks}
@@ -336,8 +349,18 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
                 onPointerUp={onEndDragSeparator}
               />
             </>
+          ) : (
+            <div className="flex items-center justify-center p-1 border-r bg-muted">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => props.setBrowserVisible(true)}
+                className="[writing-mode:vertical-lr] text-muted-foreground"
+              >
+                <ChevronRight className="inline rotate-90 mb-2" /> Library
+              </Button>
+            </div>
           )}
-
           <Arrangement
             tracks={props.tracks}
             updateTrackEnablement={() => props.project.updateTrackEnablement()}

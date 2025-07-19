@@ -1,9 +1,5 @@
 import {
-  File,
   Settings,
-  Pencil,
-  Eye,
-  HelpCircle,
   FilePlus,
   FolderDown,
   Save,
@@ -22,6 +18,8 @@ import {
   Music,
   Music2,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Project } from './ui/Project';
 import { Project as ProjectObj } from './core/Project';
@@ -33,13 +31,6 @@ import { BUFFER_SIZE, SAMPLE_RATE } from './core/Config';
 import { AudioFileManager } from './core/AudioFileManager';
 import { AudioFileManagerContext, EngineContext } from './ui/Context';
 import { Button } from './components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from './components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -337,155 +328,7 @@ function App() {
         className="h-screen max-h-screen w-screen flex flex-col bg-background text-foreground"
         onClick={resumeAudio}
       >
-        <header className="flex items-center px-4 py-2 border-b shrink-0">
-          <h1 className="text-xl font-bold mr-4">WebDAW</h1>
-          <div className="flex items-center space-x-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <File className="h-4 w-4 mr-2" />
-                  Project
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  onClick={() => {
-                    changeProject(() => {
-                      engine.current.stop();
-                      project.audioFiles.forEach((audioFile) => {
-                        audioFileManager.current.unregisterAudioFile(audioFile);
-                      });
-                      createProject(audioFileManager.current, loadFiles);
-                    });
-                  }}
-                >
-                  <FilePlus className="h-4 w-4 mr-2" />
-                  New Project
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    changeProject(() => {
-                      engine.current.stop();
-                      loadProject(audioFileManager.current);
-                    });
-                  }}
-                >
-                  <FolderDown className="h-4 w-4 mr-2" />
-                  Load...
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={saveProject}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={saveAsProject}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Save As...
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => midiFileInputRef.current?.click()}>
-                  <Music2 className="h-4 w-4 mr-2" />
-                  Import MIDI File...
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={undo}>
-                  <Undo className="h-4 w-4 mr-2" />
-                  Undo
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={redo}>
-                  <Redo className="h-4 w-4 mr-2" />
-                  Redo
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={cut}>
-                  <Scissors className="h-4 w-4 mr-2" />
-                  Cut
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={copy}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={paste}>
-                  <ClipboardPaste className="h-4 w-4 mr-2" />
-                  Paste
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={doDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setBrowserVisible(!browserVisible)}>
-                  <Library className="h-4 w-4 mr-2" />
-                  {browserVisible ? 'Hide Library' : 'Show Library'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setMixerVisible(!mixerVisible)}>
-                  <Music className="h-4 w-4 mr-2" />
-                  {mixerVisible ? 'Hide Mixer' : 'Show Mixer'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowSettings(!showSettings)}>
-                  <Cog className="h-4 w-4 mr-2" />
-                  {showSettings ? 'Hide Settings' : 'Show Setting'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <HelpCircle className="h-4 w-4 mr-2" />
-                  Help
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={openDocumentation}>
-                  <Book className="h-4 w-4 mr-2" />
-                  Documentation
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a href="https://github.com/ai-music/webdaw" target="_blank" rel="noreferrer">
-                    <Github className="h-4 w-4 mr-2" />
-                    Github
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href="https://github.com/ai-music/webdaw/issues"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Bug className="h-4 w-4 mr-2" />
-                    Report an issue
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowAbout(true)}>
-                  <Info className="h-4 w-4 mr-2" />
-                  About
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-        <main className="flex-grow flex overflow-hidden">
+        <main className="flex-grow flex flex-col overflow-hidden dark bg-background text-foreground">
           <AudioFileManagerContext.Provider value={audioFileManager.current}>
             <Project
               project={project}
@@ -500,7 +343,8 @@ function App() {
               onRegionDoubleClick={handleRegionDoubleClick}
             />
           </AudioFileManagerContext.Provider>
-          <aside className="w-80 flex-shrink-0 border-l border-border bg-background/50 flex flex-col">
+        </main>
+        <aside className="w-96 flex-shrink-0 border-l border-border bg-background text-foreground flex flex-col">
             <div className="p-4 border-b">
               <h2 className="text-lg font-semibold flex items-center">
                 <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
@@ -510,8 +354,7 @@ function App() {
             <div className="flex-grow p-4 overflow-y-auto">
               <AiChat onMidiPatternGenerated={handleMidiPatternGenerated} />
             </div>
-          </aside>
-        </main>
+        </aside>
         <input
           type="file"
           ref={midiFileInputRef}

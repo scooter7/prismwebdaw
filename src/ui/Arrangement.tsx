@@ -148,7 +148,6 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
   return (
     <div className={`${styles.arrangement} ${styles.noselect}`}>
       <div className={styles.timelineRow}>
-        <div className={styles.placeholder} />
         <div
           id="timelineScroll"
           ref={timelineScroll}

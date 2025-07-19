@@ -27,11 +27,6 @@
   border-bottom: 1px solid hsl(217 19% 27%);
 }
 
-.placeholder {
-  width: 256px;
-  min-width: 256px;
-}
-
 .timelineScroll {
   flex: 1;
   height: 3rem;
