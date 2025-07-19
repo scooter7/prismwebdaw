@@ -1,6 +1,6 @@
 import { FunctionComponent, useEffect, useState } from 'react';
 import Compact from '@uiw/react-color-compact';
-import { Mic, Settings, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { Mic, Settings, Trash2, VolumeX } from 'lucide-react';
 
 import { TrackInterface } from '../core/Track';
 import { MAX_VOLUME_DB, MIN_VOLUME_DB } from '../core/Config';
@@ -11,6 +11,7 @@ import { Input } from '../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Slider } from '../components/ui/slider';
+import { cn } from '../lib/utils';
 
 function panRenderer(val: number) {
   if (val === 0) return 'C';
@@ -79,29 +80,21 @@ export const TrackInfo: FunctionComponent<TrackInfoProps> = (props: TrackInfoPro
 
   return (
     <div
-      className="flex flex-col w-full p-2 bg-background/70 border-b border-border"
+      className="flex flex-col w-full p-1.5 bg-transparent border-b border-border"
       style={{ height: TRACK_HEIGHT_PX }}
     >
       <div className="flex justify-between items-center mb-1">
         <Input
           value={name}
           onChange={(e) => changeName(e.target.value)}
-          className="text-sm font-bold h-7 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 px-1"
-          style={{ color: props.track.color }}
+          className="text-sm font-semibold h-6 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 px-1 truncate"
+          style={{ color: color }}
         />
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center">
           <Button
             variant="ghost"
             size="icon"
-            className={`h-6 w-6 ${mute ? 'bg-yellow-600/50 text-foreground' : ''}`}
-            onClick={() => changeMute(!mute)}
-          >
-            <VolumeX className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-6 w-6 ${solo ? 'bg-green-600/50 text-foreground' : ''}`}
+            className={cn('h-6 w-6 rounded-sm', solo ? 'bg-blue-500 text-white' : '')}
             onClick={() => changeSolo(!solo)}
           >
             <span className="font-bold text-xs">S</span>
@@ -109,21 +102,29 @@ export const TrackInfo: FunctionComponent<TrackInfoProps> = (props: TrackInfoPro
           <Button
             variant="ghost"
             size="icon"
-            className={`h-6 w-6 ${record ? 'bg-red-600/50 text-foreground' : ''}`}
+            className={cn('h-6 w-6 rounded-sm', mute ? 'bg-yellow-500 text-black' : '')}
+            onClick={() => changeMute(!mute)}
+          >
+            <VolumeX className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn('h-6 w-6 rounded-sm', record ? 'bg-red-600 text-white' : '')}
             disabled={true}
           >
             <Mic className="h-4 w-4" />
           </Button>
         </div>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 flex-grow">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="h-6 w-6">
               <Settings className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent className="w-auto p-0 border-border">
             <Card>
               <CardHeader>
                 <CardTitle>Track Properties</CardTitle>
@@ -155,10 +156,11 @@ export const TrackInfo: FunctionComponent<TrackInfoProps> = (props: TrackInfoPro
           max={UX_PAN_SCALE}
           labelRenderer={panRenderer}
           noLabels={true}
-          size={30}
+          size={24}
           value={pan}
           onChange={(val) => changePan(val)}
         />
+        <div className="text-xs text-muted-foreground w-8 text-center">{panRenderer(pan)}</div>
         <Slider
           min={MIN_VOLUME_DB}
           max={MAX_VOLUME_DB}

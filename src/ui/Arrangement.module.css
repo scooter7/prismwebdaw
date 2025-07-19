@@ -15,7 +15,7 @@
   min-width: 20rem;
   width: auto;
   height: auto;
-  background-color: hsl(0 0% 100%);
+  background-color: hsl(var(--background));
 }
 
 .timelineRow {
@@ -24,7 +24,7 @@
   min-height: 2rem;
   overflow-y: hidden;
   flex: 0;
-  border-bottom: 1px solid hsl(214.3 31.8% 91.4%);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .timelineScroll {
@@ -56,8 +56,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: hsl(210 40% 96.1%);
-  border-right: 1px solid hsl(214.3 31.8% 91.4%);
+  background-color: hsl(var(--muted));
+  border-right: 1px solid hsl(var(--border));
 }
 
 .trackScroll {
@@ -90,7 +90,7 @@
   position: relative;
   height: 100%;
   width: 1px;
-  border: 1px solid #f59e0b; /* Amber color for visibility */
+  border: 1px solid #f5b32a; /* Amber color for visibility */
   top: 0;
   z-index: 100;
 }
@@ -111,14 +111,14 @@
   width: 100%;
   vertical-align: middle;
   padding-left: 2rem;
-  color: hsl(215 20.2% 65.1%);
+  color: hsl(var(--muted-foreground));
 }
 
 .dragMarker {
   position: absolute;
   height: 3px;
   width: 100%;
-  background-color: #f59e0b;
+  background-color: #f5b32a;
   top: 0;
 }
 
@@ -128,7 +128,7 @@
 }
 
 .regionPlaceholder {
-  border: 2px solid #f59e0b;
+  border: 2px solid #f5b32a;
   border-radius: 0.25rem;
   background-color: rgba(245, 158, 11, 0.2);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);  
@@ -138,13 +138,13 @@
 .trackBgEven {
   position: absolute;
   width: 100%;
-  background-color: hsl(222 12% 18%);
-  border-bottom: 1px solid hsl(222 12% 22%);
+  background-color: hsl(0, 0%, 20%);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .trackBgOdd {
   position: absolute;
   width: 100%;
-  background-color: hsl(222 12% 16%);
-  border-bottom: 1px solid hsl(222 12% 22%);
+  background-color: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
 }

@@ -1,15 +1,15 @@
 .pianoRoll {
   display: flex;
   height: 100%;
-  background-color: #f8f9fa;
+  background-color: hsl(var(--background));
   overflow: auto;
-  border: 1px solid #dee2e6;
+  border-top: 1px solid hsl(var(--border));
 }
 
 .keyboard {
   flex: 0 0 80px;
-  background-color: #fff;
-  border-right: 1px solid #ccc;
+  background-color: hsl(var(--muted));
+  border-right: 1px solid hsl(var(--border));
   position: sticky;
   left: 0;
   z-index: 3;
@@ -18,7 +18,6 @@
 
 .key {
   height: 20px;
-  border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -30,13 +29,15 @@
 
 .whiteKey {
   composes: key;
-  background-color: #fff;
+  background-color: #b3b3b3;
+  color: #181818;
+  border-bottom: 1px solid #999999;
 }
 
 .blackKey {
   composes: key;
-  background-color: #343a40;
-  color: #fff;
+  background-color: #3c3c3c;
+  color: #dcdcdc;
 }
 
 .blackKey::before {
@@ -46,7 +47,7 @@
   top: -1px;
   width: 100%;
   height: 1px;
-  background-color: #495057;
+  background-color: #222222;
 }
 
 .gridContainer {
@@ -63,7 +64,7 @@
   position: absolute;
   top: 0;
   width: 1px;
-  background-color: #e9ecef;
+  background-color: hsl(var(--border));
   z-index: 1;
 }
 
@@ -71,7 +72,7 @@
   position: absolute;
   left: 0;
   height: 1px;
-  background-color: #e9ecef;
+  background-color: hsl(var(--border));
   z-index: 1;
 }
 
@@ -79,14 +80,14 @@
   position: absolute;
   left: 0;
   height: 1px;
-  background-color: #d8dde0;
+  background-color: hsl(0, 0%, 28%);
   z-index: 1;
 }
 
 .note {
   position: absolute;
-  background-color: #4dabf7;
-  border: 1px solid #1c7ed6;
+  background-color: hsl(var(--accent));
+  border: 1px solid hsl(195, 100%, 40%);
   border-radius: 3px;
   box-sizing: border-box;
   opacity: 0.9;

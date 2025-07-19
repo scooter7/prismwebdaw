@@ -47,7 +47,7 @@ function drawAudioBuffer(audioBuffer: AudioBuffer, canvas: HTMLCanvasElement) {
   const endOffset = Math.min(duration * bufferScale, audioBuffer.length);
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.lineWidth = 2;
-  context.strokeStyle = 'black';
+  context.strokeStyle = 'white';
   context.beginPath();
   const sliceWidth = canvas.width / (duration * bufferScale);
   let x = 0;
@@ -100,12 +100,12 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
   }
 
   const style = {
-    borderColor: props.region.color,
+    backgroundColor: props.region.color,
+    borderColor: selected ? 'hsl(var(--accent))' : props.region.color,
     width: tempStyle?.width !== undefined ? `${tempStyle.width}px` : `${initialWidth}px`,
     height: `${REGION_HEIGHT_PX}px`,
     left: tempStyle?.left !== undefined ? `${tempStyle.left}px` : `${initialLeft}px`,
     top: `${props.trackIndex * TRACK_HEIGHT_PX}px`,
-    backgroundColor: selected ? props.region.color : 'transparent',
   };
 
   // TODO: retrieval should just be based on the scaleFactor.
@@ -305,7 +305,7 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
           onPointerUp={onDragLoopEnd}
         />
       </div>
-      <div>
+      <div className="p-1 truncate">
         <EditableText
           alwaysRenderInput={true}
           value={props.region.name}

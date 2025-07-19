@@ -344,8 +344,8 @@ function App() {
             />
           </AudioFileManagerContext.Provider>
         </main>
-        <aside className="w-96 flex-shrink-0 border-l border-border bg-background text-foreground flex flex-col">
-            <div className="p-4 border-b">
+        <aside className="w-96 flex-shrink-0 border-l border-border bg-muted flex flex-col">
+            <div className="p-4 border-b border-border">
               <h2 className="text-lg font-semibold flex items-center">
                 <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
                 AI Music Assistant

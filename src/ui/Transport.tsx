@@ -12,6 +12,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { FastForward, Rewind, Pause, Play, Repeat, StepBack, StepForward, ZoomIn, ZoomOut, Frame, Mic } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 export enum PlaybackState {
   Stopped,
@@ -152,14 +153,14 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
   return (
     <div className="flex flex-wrap items-center gap-x-4 p-2 border-b bg-muted">
       <div className="flex items-center space-x-1">
-        <Button variant="ghost" size="icon" onClick={onBegin}><StepBack /></Button>
-        <Button variant="ghost" size="icon" onClick={onBackward}><Rewind /></Button>
-        <Button variant="ghost" size="icon" onClick={play} disabled={playback !== PlaybackState.Stopped} className={playback === PlaybackState.Playing ? 'text-green-500' : ''}><Play /></Button>
-        <Button variant="ghost" size="icon" onClick={pause} disabled={playback === PlaybackState.Stopped}><Pause /></Button>
-        <Button variant="ghost" size="icon" onClick={record} disabled={true} className={playback === PlaybackState.Recording ? 'text-red-500' : ''}><Mic /></Button>
-        <Button variant="ghost" size="icon" onClick={onForward}><FastForward /></Button>
-        <Button variant="ghost" size="icon" onClick={onEnd}><StepForward /></Button>
-        <Button variant={props.looping ? "secondary" : "ghost"} size="icon" onClick={() => props.setLooping(!props.looping)}><Repeat /></Button>
+        <Button variant="ghost" size="icon" onClick={onBegin} className="h-7 w-7"><StepBack /></Button>
+        <Button variant="ghost" size="icon" onClick={onBackward} className="h-7 w-7"><Rewind /></Button>
+        <Button variant="ghost" size="icon" onClick={play} disabled={playback !== PlaybackState.Stopped} className={cn("h-7 w-7", playback === PlaybackState.Playing ? 'text-green-400' : '')}><Play /></Button>
+        <Button variant="ghost" size="icon" onClick={pause} disabled={playback === PlaybackState.Stopped} className="h-7 w-7"><Pause /></Button>
+        <Button variant="ghost" size="icon" onClick={record} disabled={true} className={cn("h-7 w-7", playback === PlaybackState.Recording ? 'text-red-500' : '')}><Mic /></Button>
+        <Button variant="ghost" size="icon" onClick={onForward} className="h-7 w-7"><FastForward /></Button>
+        <Button variant="ghost" size="icon" onClick={onEnd} className="h-7 w-7"><StepForward /></Button>
+        <Button variant={props.looping ? "secondary" : "ghost"} size="icon" onClick={() => props.setLooping(!props.looping)} className="h-7 w-7"><Repeat /></Button>
       </div>
       <div className="flex items-center space-x-2">
         <Label htmlFor="metronome-switch" className="text-xs">Metronome</Label>
@@ -167,14 +168,14 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
       </div>
       <div className="flex items-center space-x-2">
         <Label className="text-xs">BPM</Label>
-        <Input className="w-16 h-8" value={bpm.toFixed(0)} onChange={(e) => setBpm(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
+        <Input className="w-16 h-7 text-sm" value={bpm.toFixed(0)} onChange={(e) => setBpm(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
       </div>
       <div className="flex items-center space-x-2">
         <Label className="text-xs">Signature</Label>
         <div className="flex items-center">
-          <Input className="w-10 h-8" value={numerator.toFixed(0)} onChange={(e) => setNumerator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
+          <Input className="w-10 h-7 text-sm" value={numerator.toFixed(0)} onChange={(e) => setNumerator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
           <span className="mx-1">/</span>
-          <Input className="w-10 h-8" value={denominator.toFixed(0)} onChange={(e) => setDenominator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
+          <Input className="w-10 h-7 text-sm" value={denominator.toFixed(0)} onChange={(e) => setDenominator(parseInt(e.target.value))} disabled={playback !== PlaybackState.Stopped} />
         </div>
       </div>
       <Time label="Time" timestamp={props.timestamp} setTimestamp={props.setTimestamp} />
@@ -184,9 +185,9 @@ export const Transport: FunctionComponent<TransportProps> = (props: TransportPro
       <Location label="End" location={props.end} setLocation={props.setEnd} timeSignature={timeSignature} />
       <div className="flex-grow" />
       <div className="flex items-center space-x-1">
-        <Button variant="ghost" size="icon" onClick={zoomOut} disabled={props.timelineScale <= MIN_TIMELINE_SCALE}><ZoomOut /></Button>
-        <Button variant="ghost" size="icon" onClick={zoomIn} disabled={props.timelineScale >= MAX_TIMELINE_SCALE}><ZoomIn /></Button>
-        <Button variant="ghost" size="icon" onClick={zoomToFit}><Frame /></Button>
+        <Button variant="ghost" size="icon" onClick={zoomOut} disabled={props.timelineScale <= MIN_TIMELINE_SCALE} className="h-7 w-7"><ZoomOut /></Button>
+        <Button variant="ghost" size="icon" onClick={zoomIn} disabled={props.timelineScale >= MAX_TIMELINE_SCALE} className="h-7 w-7"><ZoomIn /></Button>
+        <Button variant="ghost" size="icon" onClick={zoomToFit} className="h-7 w-7"><Frame /></Button>
       </div>
     </div>
   );

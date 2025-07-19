@@ -310,15 +310,15 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           {props.browserVisible ? (
             <>
               <div
-                className={`${styles.browser} bg-background`}
+                className={`${styles.browser} bg-muted`}
                 style={{
                   width: `${browserWidth}px`,
                   minWidth: `${browserWidth}px`,
                   maxWidth: `${browserWidth}px`,
                 }}
               >
-                <div className="p-2 border-b flex justify-between items-center">
-                  <h2 className="font-semibold">Library</h2>
+                <div className="p-2 border-b border-border flex justify-between items-center">
+                  <h2 className="font-semibold text-foreground">Library</h2>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -348,11 +348,11 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
                 onPointerMove={onDragSeparator}
                 onPointerUp={onEndDragSeparator}
               >
-                <div className="w-px h-full bg-border group-hover:bg-primary/20 transition-colors" />
+                <div className="w-px h-full bg-border group-hover:bg-ring/50 transition-colors" />
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center p-1 border-r bg-muted">
+            <div className="flex items-center justify-center p-1 border-r border-border bg-muted">
               <Button
                 variant="ghost"
                 size="sm"

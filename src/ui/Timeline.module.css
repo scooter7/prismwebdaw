@@ -13,7 +13,7 @@
 .timelineBack {
   width: 100%;
   position: relative;
-  background-color: hsl(222 12% 18%);
+  background-color: hsl(var(--muted));
 }
 
 .timelineLocators {
@@ -22,7 +22,7 @@
   width: 100%;
   height: 1rem;
   overflow: hidden;
-  border-bottom: 1px solid hsl(217 19% 27%);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .timelineRuler {
@@ -35,13 +35,13 @@
 
 .timelineTick {
   position: absolute;
-  border-left: 1px solid hsl(215 20.2% 45.1%);
+  border-left: 1px solid hsl(var(--muted-foreground));
   height: 0.5rem;
 }
 
 .timelineMajorTick {
   position: absolute;
-  border-left: 1px solid hsl(215 20.2% 85.1%);
+  border-left: 1px solid hsl(var(--foreground));
   height: 1rem;
 }
 
@@ -50,13 +50,13 @@
   left: 0;
   font-size: 0.75rem;
   margin-left: 0.2rem;
-  color: hsl(215 20.2% 85.1%);
+  color: hsl(var(--muted-foreground));
 }
 
 .loop {
   position: absolute;
   height: 100%;
-  background-color: hsla(210, 40%, 98%, 0.1);
+  background-color: hsla(var(--accent), 0.2);
 }
 
 .locator:hover {
