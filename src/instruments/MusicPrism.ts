@@ -4,7 +4,7 @@ import { WebAudioModule } from '@webaudiomodules/sdk';
 export class MusicPrism implements Instrument {
     readonly name = 'Music Prism';
     private context: AudioContext | null = null;
-    private wamInstance: WebAudioModule | null = null;
+    private wamInstance: any = null;
     private wamNode: AudioNode | null = null;
     private wamGui: HTMLElement | null = null;
 
@@ -21,13 +21,14 @@ export class MusicPrism implements Instrument {
             
             const hostGroupId = `com.webdaw.host-${Math.floor(Math.random() * 1000000)}`;
 
-            this.wamInstance = await WamConstructor.createInstance(hostGroupId, this.context);
+            // We cast the instance to `any` to avoid type checking issues with the SDK.
+            const wamInstance: any = await WamConstructor.createInstance(hostGroupId, this.context);
+            this.wamInstance = wamInstance;
 
             if (this.wamInstance) {
-                // The property is _audioNode in the version used, and we cast to any to access it.
-                this.wamNode = (this.wamInstance as any)._audioNode;
-                // The createGui method is on the instance, but we need to cast to call it.
-                this.wamGui = await (this.wamInstance as any).createGui();
+                // The property is `_audioNode` in this version of the SDK.
+                this.wamNode = this.wamInstance._audioNode;
+                this.wamGui = await this.wamInstance.createGui();
             }
 
         } catch (error) {
@@ -51,7 +52,7 @@ export class MusicPrism implements Instrument {
             type: 'midi',
             data: [0x90, note, velocity], // Note On, channel 1
         };
-        (this.wamInstance as any).scheduleEvents({ ...midiEvent, time });
+        this.wamInstance.scheduleEvents({ ...midiEvent, time });
     }
 
     noteOff(note: number, time: number): void {
@@ -61,7 +62,7 @@ export class MusicPrism implements Instrument {
             type: 'midi',
             data: [0x80, note, 0], // Note Off, channel 1
         };
-        (this.wamInstance as any).scheduleEvents({ ...midiEvent, time });
+        this.wamInstance.scheduleEvents({ ...midiEvent, time });
     }
 
     stopAll(): void {
@@ -73,7 +74,7 @@ export class MusicPrism implements Instrument {
                 type: 'midi',
                 data: [0xB0 + channel, 123, 0], // All notes off on this channel
             };
-            (this.wamInstance as any).scheduleEvents({ ...midiEvent, time: now });
+            this.wamInstance.scheduleEvents({ ...midiEvent, time: now });
         }
     }
 
