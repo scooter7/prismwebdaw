@@ -1,4 +1,5 @@
 import { FunctionComponent, useRef, useState } from 'react';
+import { cloneDeep } from 'lodash';
 
 import styles from './Timeline.module.css';
 import { Duration, Location, LocationToTime, TimeSignature } from '../core/Common';
@@ -47,10 +48,12 @@ export class TimelineGenerator implements IterableIterator<Location> {
 
     const result = {
       done: done,
-      value: this.current,
+      value: cloneDeep(this.current),
     };
 
-    this.current = this.current.add(this.step, this.signature);
+    if (!done) {
+      this.current = this.current.add(this.step, this.signature);
+    }
 
     return result;
   }
