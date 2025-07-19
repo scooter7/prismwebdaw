@@ -13,6 +13,7 @@
 .timelineBack {
   width: 100%;
   position: relative;
+  background-color: hsl(222 12% 18%);
 }
 
 .timelineLocators {
