@@ -11,8 +11,8 @@ export class MusicPrism implements Instrument {
     async initialize(context: AudioContext): Promise<void> {
         this.context = context;
         
-        // This is a placeholder URL for a known working WAM.
-        // You may need to replace this with the correct URL for your Music Prism WAM.
+        // IMPORTANT: Replace this URL with the actual URL of your hosted Music Prism WAM.
+        // This should point to the main JavaScript file for your plugin.
         const wamUrl = 'https://main.d2z11ads4dq6v1.amplifyapp.com/index.js';
 
         try {
