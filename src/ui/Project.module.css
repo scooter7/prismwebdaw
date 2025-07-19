@@ -24,20 +24,6 @@
   overflow-x: hidden;
 }
 
-.separator {
-  width: 5px;
-  min-width: 5px;
-  max-width: 5px;
-  height: 100%;
-  /* background: #ccc; */
-  margin-left: 0.2rem;
-  margin-right: 0.2rem;
-  flex: 0;
-  cursor: col-resize;
-  border-left: 2px solid gainsboro;
-  border-right: 2px solid gainsboro;
-}
-
 .editorPane {
   flex-shrink: 0;
   height: 300px;

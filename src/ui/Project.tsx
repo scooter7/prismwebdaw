@@ -310,7 +310,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           {props.browserVisible ? (
             <>
               <div
-                className={styles.browser}
+                className={`${styles.browser} bg-background`}
                 style={{
                   width: `${browserWidth}px`,
                   minWidth: `${browserWidth}px`,
@@ -343,11 +343,13 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
                 </div>
               </div>
               <div
-                className={styles.separator}
+                className="w-1.5 flex-shrink-0 cursor-col-resize flex items-center justify-center group"
                 onPointerDown={onBeginDragSeparator}
                 onPointerMove={onDragSeparator}
                 onPointerUp={onEndDragSeparator}
-              />
+              >
+                <div className="w-px h-full bg-border group-hover:bg-primary/20 transition-colors" />
+              </div>
             </>
           ) : (
             <div className="flex items-center justify-center p-1 border-r bg-muted">
