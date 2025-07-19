@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+// @deno-types="npm:@types/pdf-parse@1.1.4"
+import pdf from "npm:pdf-parse@1.1.1";
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,25 +41,30 @@ serve(async (req) => {
   }
 
   try {
-    // The request body for a storage trigger is different, we get the record directly
     const { record } = await req.json()
     const filePath = record.id; 
     const bucketName = record.bucket_id;
 
     console.log(`Processing file: ${filePath} from bucket: ${bucketName}`);
 
-    // 1. Download the file from storage
     const { data: fileData, error: downloadError } = await supabaseAdmin.storage
       .from(bucketName)
       .download(filePath);
 
     if (downloadError) throw downloadError;
 
-    const fileContent = await fileData.text();
+    const fileBuffer = await fileData.arrayBuffer();
+    
+    let fileContent = '';
+    if (record.metadata.mimetype === 'application/pdf') {
+        const pdfData = await pdf(fileBuffer);
+        fileContent = pdfData.text;
+    } else {
+        fileContent = new TextDecoder().decode(fileBuffer);
+    }
 
-    // 2. Clean and chunk the content
-    const cleanContent = fileContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-    const chunks = cleanContent.split('\n\n').filter(chunk => chunk.trim().length > 0);
+    const cleanContent = fileContent.replace(/\s+/g, ' ').trim();
+    const chunks = cleanContent.split('\n\n').filter(chunk => chunk.trim().length > 20);
 
     if (chunks.length === 0) {
       console.log("No content chunks found in file.");
@@ -65,7 +73,6 @@ serve(async (req) => {
       });
     }
 
-    // 3. Delete old entries for this file to avoid duplicates on re-upload
     const { error: deleteError } = await supabaseAdmin
       .from('music_theory_docs')
       .delete()
@@ -75,7 +82,6 @@ serve(async (req) => {
       console.error("Error deleting old entries:", deleteError);
     }
 
-    // 4. Generate embeddings and insert into DB
     for (const chunk of chunks) {
       const embedding = await generateEmbedding(chunk);
       
