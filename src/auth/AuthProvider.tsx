@@ -16,30 +16,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // and then again whenever the auth state changes.
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
-        console.log('AuthProvider: Auth state changed event:', _event, 'New session:', newSession);
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+        try {
+          console.log('AuthProvider: Auth state changed event:', _event, 'New session:', newSession);
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
 
-        if (newSession?.user) {
-          try {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', newSession.user.id)
-              .single();
-            console.log('AuthProvider: Profile data on auth state change:', profileData);
-            setProfile(profileError ? null : profileData);
-          } catch (profileFetchError) {
-            console.error('AuthProvider: Error fetching profile on auth state change:', profileFetchError);
+          if (newSession?.user) {
+            try {
+              // Use .maybeSingle() to handle cases where no profile exists yet
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', newSession.user.id)
+                .maybeSingle(); // Changed to maybeSingle()
+              
+              if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is "No rows found"
+                console.error('AuthProvider: Error fetching profile on auth state change:', profileError);
+                setProfile(null);
+              } else {
+                console.log('AuthProvider: Profile data on auth state change:', profileData);
+                setProfile(profileData); // profileData will be null if no row found
+              }
+            } catch (profileFetchError) {
+              console.error('AuthProvider: Error fetching profile on auth state change (catch block):', profileFetchError);
+              setProfile(null);
+            }
+          } else {
             setProfile(null);
           }
-        } else {
-          setProfile(null);
+        } finally {
+          // Crucially, set loading to false AFTER processing the state change,
+          // ensuring it runs even if profile fetching fails.
+          setLoading(false);
+          console.log('AuthProvider: Loading set to false after state change.');
         }
-        // Crucially, set loading to false AFTER processing the state change.
-        // This ensures that the initial state is captured and loading is turned off.
-        setLoading(false);
-        console.log('AuthProvider: Loading set to false after state change.');
       }
     );
 
