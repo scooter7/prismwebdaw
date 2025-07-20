@@ -1,8 +1,14 @@
-/* @tailwind base;
+@tailwind base;
 @tailwind components;
-@tailwind utilities; */
+@tailwind utilities;
 
-/* @layer base {
+/* BlueprintJS styles */
+@import "~@blueprintjs/core/lib/css/blueprint.css";
+@import "~@blueprintjs/icons/lib/css/blueprint-icons.css";
+@import "~@blueprintjs/select/lib/css/blueprint-select.css";
+@import "~@blueprintjs/table/lib/css/blueprint-table.css";
+
+@layer base {
   :root {
     --background: hsl(0 0% 100%);
     --foreground: hsl(222.2 84% 4.9%);
@@ -48,19 +54,19 @@
     --ring: 195 100% 50%;
     --radius: 0.25rem;
   }
-} */
+}
 
-/* @layer base {
+@layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
   }
-} */
+}
 
 /* BlueprintJS Dark Theme Overrides */
-/* .bp5-tree-node-content {
+.bp5-tree-node-content {
   @apply text-foreground rounded-sm;
 }
 
@@ -86,4 +92,4 @@
 
 .bp5-tree-node-selected .bp5-tree-node-caret {
   @apply text-accent-foreground;
-} */
+}
