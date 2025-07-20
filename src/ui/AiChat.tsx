@@ -51,8 +51,9 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
 
       if (midiMatch && midiMatch[1]) {
         try {
-          const midiJsonString = midiMatch[1];
-          const midiData = JSON.parse(midiJsonString);
+          // The AI might wrap the JSON in markdown, so we need to clean it up.
+          const cleanedJsonString = midiMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
+          const midiData = JSON.parse(cleanedJsonString);
           
           if (midiData.type === 'midi_patterns' && Array.isArray(midiData.patterns)) {
             for (const pattern of midiData.patterns) {
