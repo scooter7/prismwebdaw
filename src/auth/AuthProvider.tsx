@@ -73,11 +73,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     profile,
     signOut,
+    loading, // Now including loading in the context value
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children} {/* Removed conditional rendering here, as App.tsx handles loading state */}
     </AuthContext.Provider>
   );
 };

@@ -6,7 +6,8 @@ export const AuthContext = createContext<{
   user: User | null;
   profile: any | null;
   signOut: () => void;
-}>({ session: null, user: null, profile: null, signOut: () => {} });
+  loading: boolean; // Added loading property
+}>({ session: null, user: null, profile: null, signOut: () => {}, loading: true });
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
