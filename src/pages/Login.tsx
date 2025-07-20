@@ -17,7 +17,7 @@ const Login = () => {
         <Auth
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
-          providers={[]} {/* Removed 'github' to enable email/password */}
+          providers={[]}
           theme="dark"
           magicLink={true} // Enable magic link for passwordless login
         />
