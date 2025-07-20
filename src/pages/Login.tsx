@@ -1,10 +1,10 @@
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../integrations/supabase/client';
-import { useAuth } from '../auth/AuthProvider'; // Import useAuth
+import { useAuth } from '../auth/AuthProvider';
 
 const Login = () => {
-  const { session, signOut } = useAuth(); // Use signOut from AuthContext
+  const { session, signOut } = useAuth();
 
   return (
     <div className="flex justify-center items-center h-screen bg-background">
@@ -17,11 +17,11 @@ const Login = () => {
         <Auth
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
-          providers={['github']}
+          providers={[]} {/* Removed 'github' to enable email/password */}
           theme="dark"
-          socialLayout="horizontal"
+          magicLink={true} // Enable magic link for passwordless login
         />
-        {session && ( // Show sign out button only if a session exists
+        {session && (
           <div className="mt-4 text-center">
             <button
               onClick={signOut}
