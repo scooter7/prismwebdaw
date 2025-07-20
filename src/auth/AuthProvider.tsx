@@ -10,14 +10,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Always run this on mount (even in StrictMode)
+    console.log('AuthProvider: useEffect running, attempting to get session...');
     supabase.auth.getSession()
       .then(async ({ data: { session: initialSession }, error }) => {
+        console.log('AuthProvider: getSession resolved.');
         if (error) {
+          console.error('AuthProvider: Error getting session:', error);
           setSession(null);
           setUser(null);
           setProfile(null);
         } else {
+          console.log('AuthProvider: Initial session data:', initialSession);
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
           if (initialSession?.user) {
@@ -27,8 +30,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .select('*')
                 .eq('id', initialSession.user.id)
                 .single();
+              console.log('AuthProvider: Profile data:', profileData);
               setProfile(profileError ? null : profileData);
-            } catch {
+            } catch (profileFetchError) {
+              console.error('AuthProvider: Error fetching profile:', profileFetchError);
               setProfile(null);
             }
           } else {
@@ -36,11 +41,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
         setLoading(false);
+        console.log('AuthProvider: Loading set to false.');
+      })
+      .catch(err => {
+        console.error('AuthProvider: getSession promise rejected:', err);
+        setLoading(false); // Ensure loading is false even if promise rejects
       });
 
     // Listen for future auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
+        console.log('AuthProvider: Auth state changed event:', _event, 'New session:', newSession);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user) {
@@ -50,8 +61,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               .select('*')
               .eq('id', newSession.user.id)
               .single();
+            console.log('AuthProvider: Profile data on auth state change:', profileData);
             setProfile(profileError ? null : profileData);
-          } catch {
+          } catch (profileFetchError) {
+            console.error('AuthProvider: Error fetching profile on auth state change:', profileFetchError);
             setProfile(null);
           }
         } else {
@@ -60,11 +73,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
     return () => {
+      console.log('AuthProvider: Unsubscribing from auth listener.');
       authListener?.subscription.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
+    console.log('AuthProvider: Signing out...');
     await supabase.auth.signOut();
   };
 
@@ -73,12 +88,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     profile,
     signOut,
-    loading, // Now including loading in the context value
+    loading,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children} {/* Removed conditional rendering here, as App.tsx handles loading state */}
+      {children}
     </AuthContext.Provider>
   );
 };
