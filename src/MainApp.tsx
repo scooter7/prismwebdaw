@@ -82,21 +82,19 @@ function createInstrument(name: string): Instrument {
 }
 
 function MainApp() {
-  const [engineContainer] = useState(() => {
-    const context = new AudioContext();
-    const initialProject = new ProjectObj();
-    const engine = new Engine(context, { bufferSize: BUFFER_SIZE, sampleRate: SAMPLE_RATE }, initialProject);
-    return { engine, initialProject, context };
-  });
+  const [engineContainer, setEngineContainer] = useState<{
+    engine: Engine;
+    initialProject: ProjectObj;
+    context: AudioContext;
+  } | null>(null);
 
-  const { engine, initialProject, context: audioContext } = engineContainer;
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const audioFileManager = useRef<AudioFileManager>(new AudioFileManager());
   const midiFileInputRef = useRef<HTMLInputElement>(null);
 
-  const [project, setProject] = useState(initialProject);
-  const [tracks, setTracks] = useState(initialProject.tracks);
-
+  const [project, setProject] = useState<ProjectObj | null>(null);
+  const [tracks, setTracks] = useState<AbstractTrack[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [confirmStopAudio, setConfirmStopAudio] = useState(false);
@@ -104,7 +102,6 @@ function MainApp() {
   const [mixerVisible, setMixerVisible] = useState(false);
   const [browserVisible, setBrowserVisible] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
-  const [initialized, setInitialized] = useState(false);
   const [editingRegion, setEditingRegion] = useState<{
     trackIndex: number;
     regionIndex: number;
@@ -112,30 +109,45 @@ function MainApp() {
 
   const continueChangeProject = useRef<() => void>();
 
-  const resumeAudio = () => {
-    const initialize = () => {
-      if (!initialized) {
-        initializeEngine(engine);
-        setInitialized(true);
-      }
-    };
+  const initializeApp = () => {
+    if (isInitialized) return;
 
-    if (audioContext.state === 'suspended') {
-      audioContext.resume().then(() => {
-        console.log('AudioContext resumed successfully');
-        initialize();
-      });
-    } else {
-      initialize();
-    }
-  };
+    const context = new AudioContext();
+    const initialProject = new ProjectObj();
+    const engine = new Engine(context, { bufferSize: BUFFER_SIZE, sampleRate: SAMPLE_RATE }, initialProject);
 
-  function initializeEngine(engine: Engine) {
+    setEngineContainer({ engine, initialProject, context });
+    setProject(initialProject);
+    setTracks(initialProject.tracks);
+
     setLoading(true);
     engine.initialize(() => {
       setLoading(false);
     });
+
+    setIsInitialized(true);
+  };
+
+  if (!isInitialized) {
+    return (
+      <div
+        className="flex h-screen w-screen cursor-pointer items-center justify-center bg-background text-foreground"
+        onClick={initializeApp}
+      >
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">WebDAW</h1>
+          <p className="text-muted-foreground">Click anywhere to start the audio engine</p>
+        </div>
+      </div>
+    );
   }
+
+  if (!engineContainer || !project) {
+    // This should not be reached if isInitialized is true, but it's a good safeguard.
+    return <div>Loading...</div>;
+  }
+
+  const { engine, context: audioContext } = engineContainer;
 
   function loadFiles(project: ProjectObj) {
     setLoading(true);
@@ -354,7 +366,6 @@ function MainApp() {
 
         <div
           className="h-screen max-h-screen w-screen flex flex-row bg-background text-foreground"
-          onClick={resumeAudio}
         >
           <main className="flex-grow flex flex-col overflow-hidden bg-background text-foreground">
             <AudioFileManagerContext.Provider value={audioFileManager.current}>
