@@ -16,7 +16,8 @@ function App() {
 function AppContent() {
   const { session } = useAuth();
   console.log("WebDAW: AppContent rendered, session:", session);
-  return session ? <MainApp /> : <Login />;
+  // Temporarily force Login page to allow sign out
+  return <Login />; // Changed from: return session ? <MainApp /> : <Login />;
 }
 
 export default App;
