@@ -61,8 +61,6 @@ import { AbstractTrack } from './core/Track';
 import { AudioTrack } from './core/AudioTrack';
 import { MusicPrism } from './instruments/MusicPrism';
 
-const audioContext = new AudioContext();
-
 const LICENSE =
   'MIT License\n\nCopyright (c) 2023, 2024 Hans-Martin Will\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.';
 
@@ -84,10 +82,15 @@ function createInstrument(name: string): Instrument {
 }
 
 function MainApp() {
-  const initialProject = new ProjectObj();
-  const engine = useRef<Engine>(
-    new Engine(audioContext, { bufferSize: BUFFER_SIZE, sampleRate: SAMPLE_RATE }, initialProject),
-  );
+  const [engineContainer] = useState(() => {
+    const context = new AudioContext();
+    const initialProject = new ProjectObj();
+    const engine = new Engine(context, { bufferSize: BUFFER_SIZE, sampleRate: SAMPLE_RATE }, initialProject);
+    return { engine, initialProject, context };
+  });
+
+  const { engine, initialProject, context: audioContext } = engineContainer;
+
   const audioFileManager = useRef<AudioFileManager>(new AudioFileManager());
   const midiFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,7 +115,7 @@ function MainApp() {
   const resumeAudio = () => {
     const initialize = () => {
       if (!initialized) {
-        initializeEngine(engine.current);
+        initializeEngine(engine);
         setInitialized(true);
       }
     };
@@ -137,9 +140,9 @@ function MainApp() {
   function loadFiles(project: ProjectObj) {
     setLoading(true);
     project.loadFiles(
-      engine.current.context,
+      engine.context,
       (project) => {
-        engine.current.project = project;
+        engine.project = project;
         setProject(project);
         setTracks(project.tracks);
         setLoading(false);
@@ -152,7 +155,7 @@ function MainApp() {
 
   function changeProject(action: () => void) {
     continueChangeProject.current = action;
-    if (engine.current.isPlaying) {
+    if (engine.isPlaying) {
       setConfirmStopAudio(true);
     } else {
       action();
@@ -171,7 +174,7 @@ function MainApp() {
     if (newTrack) {
       project.appendTrack(newTrack);
 
-      engine.current.handleTrackEvent({
+      engine.handleTrackEvent({
         type: TrackEventType.Added,
         track: newTrack,
       });
@@ -197,7 +200,7 @@ function MainApp() {
         project.tracks = updatedTracks;
 
         for (const track of newMidiTracks) {
-          await engine.current.handleTrackEvent({
+          await engine.handleTrackEvent({
             type: TrackEventType.Added,
             track: track,
           });
@@ -252,7 +255,7 @@ function MainApp() {
 
     project.appendTrack(newTrack);
 
-    await engine.current.handleTrackEvent({
+    await engine.handleTrackEvent({
       type: TrackEventType.Added,
       track: newTrack,
     });
@@ -278,7 +281,7 @@ function MainApp() {
   };
 
   return (
-    <EngineContext.Provider value={engine.current}>
+    <EngineContext.Provider value={engine}>
       <Dialog open={showAbout} onOpenChange={setShowAbout}>
         <DialogContent>
           <DialogHeader>
