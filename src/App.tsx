@@ -1,14 +1,20 @@
 import React from 'react';
-
-console.log("WebDAW: App.tsx loaded");
+import { useAuth } from './auth/AuthContext';
+import MainApp from './MainApp';
+import Login from './pages/Login';
 
 function App() {
-  console.log("WebDAW: App component rendered");
-  return (
-    <div style={{ backgroundColor: 'blue', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <h1 style={{ color: 'white', fontSize: '48px' }}>Hello WebDAW!</h1>
-    </div>
-  );
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
+        <p>Loading authentication...</p>
+      </div>
+    );
+  }
+
+  return session ? <MainApp /> : <Login />;
 }
 
 export default App;
