@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`;
-const GEMINI_CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+const STREAMING_GEMINI_CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?key=${GEMINI_API_KEY}`;
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -51,10 +51,8 @@ serve(async (req) => {
     const { prompt } = await req.json();
     if (!prompt) throw new Error("Prompt is required");
 
-    // 1. Generate embedding for the user's prompt
     const queryEmbedding = await generateEmbedding(prompt);
 
-    // 2. Query Supabase for relevant documents
     const { data: documents, error: matchError } = await supabaseAdmin.rpc('match_music_theory_docs', {
       query_embedding: queryEmbedding,
       match_threshold: 0.7,
@@ -64,12 +62,9 @@ serve(async (req) => {
     if (matchError) throw matchError;
 
     const contextText = documents.map((doc: any) => doc.content).join('\n\n');
-
-    // 3. Construct the final prompt for Gemini
     const finalPrompt = SYSTEM_PROMPT_LEARN.replace('{CONTEXT}', contextText) + `\n\nUser's question: "${prompt}"`;
 
-    // 4. Call Gemini to get the final answer
-    const geminiResponse = await fetch(GEMINI_CHAT_URL, {
+    const geminiStreamResponse = await fetch(STREAMING_GEMINI_CHAT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -77,17 +72,48 @@ serve(async (req) => {
       })
     });
 
-    if (!geminiResponse.ok) {
-      const errorBody = await geminiResponse.text();
+    if (!geminiStreamResponse.ok) {
+      const errorBody = await geminiStreamResponse.text();
       throw new Error(`Gemini API Error: ${errorBody}`);
     }
 
-    const geminiData = await geminiResponse.json();
-    const assistantResponse = geminiData.candidates[0].content.parts[0].text;
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const textDecoder = new TextDecoder();
+    const geminiBodyReader = geminiStreamResponse.body!.getReader();
 
-    // 5. Return the response
-    return new Response(JSON.stringify({ response: assistantResponse }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const pump = async () => {
+      while (true) {
+        const { done, value } = await geminiBodyReader.read();
+        if (done) {
+          writer.close();
+          break;
+        }
+        
+        const chunk = textDecoder.decode(value);
+        const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+        for (const line of lines) {
+          const jsonString = line.substring(6);
+          try {
+            const parsed = JSON.parse(jsonString);
+            const text = parsed.candidates[0]?.content?.parts[0]?.text;
+            if (text) {
+              writer.write(new TextEncoder().encode(text));
+            }
+          } catch (e) {
+            // Ignore parsing errors for incomplete json chunks
+          }
+        }
+      }
+    };
+
+    pump().catch(e => {
+      console.error("Error in stream pump:", e);
+      writer.abort(e);
+    });
+
+    return new Response(readable, {
+      headers: { ...corsHeaders, 'Content-Type': 'text/plain; charset=utf-8' },
       status: 200,
     });
 

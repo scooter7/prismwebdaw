@@ -5,6 +5,7 @@ import { ScrollArea } from '../components/ui/scroll-area';
 import { Bot, User, Loader2, Music, BrainCircuit } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { cn } from '../lib/utils';
+import { useAuth } from '../auth/AuthProvider';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,6 +22,7 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { session } = useAuth();
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -34,22 +36,21 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
+    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
     try {
-      const functionName = mode === 'create' ? 'gemini-chat' : 'gemini-rag-chat';
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { prompt: input },
-      });
-
-      if (error) {
-        throw error;
-      }
-      
-      let assistantContent = data.response;
-
       if (mode === 'create') {
+        const { data, error } = await supabase.functions.invoke('gemini-chat', {
+          body: { prompt: currentInput },
+        });
+
+        if (error) throw error;
+        
+        let assistantContent = data.response;
         const midiRegex = /\[WEBDAW_MIDI\]([\s\S]*?)\[\/WEBDAW_MIDI\]/;
         const midiMatch = assistantContent.match(midiRegex);
 
@@ -69,14 +70,57 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
             console.error("Failed to parse MIDI JSON from AI response:", jsonError);
           }
         }
-      }
-      
-      const assistantMessage: Message = { role: 'assistant', content: assistantContent };
-      setMessages((prev) => [...prev, assistantMessage]);
+        
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1].content = assistantContent;
+          return newMessages;
+        });
+      } else { // Learn mode with streaming
+        const response = await fetch(`https://yezjxwahexsfbvhfxsji.supabase.co/functions/v1/gemini-rag-chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ prompt: currentInput }),
+        });
 
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch stream');
+        }
+
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === 'assistant') {
+              lastMessage.content += chunk;
+            }
+            return newMessages;
+          });
+        }
+      }
     } catch (err: any) {
-      const errorMessage: Message = { role: 'assistant', content: `Sorry, I encountered an error: ${err.message}` };
-      setMessages((prev) => [...prev, errorMessage]);
+      const errorMessage = `Sorry, I encountered an error: ${err.message}`;
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (lastMessage.role === 'assistant') {
+          lastMessage.content = errorMessage;
+        } else {
+          newMessages.push({ role: 'assistant', content: errorMessage });
+        }
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +162,7 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
               {message.role === 'user' && <User className="h-6 w-6 flex-shrink-0" />}
             </div>
           ))}
-          {isLoading && (
+          {isLoading && messages[messages.length - 1]?.content === '' && (
              <div className="flex items-start gap-3">
                 <Bot className="h-6 w-6 flex-shrink-0 text-yellow-400" />
                 <div className="rounded-lg px-3 py-2 bg-muted flex items-center">
