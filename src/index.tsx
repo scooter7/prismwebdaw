@@ -8,7 +8,7 @@ import './index.css'; // Your custom CSS
 import '@blueprintjs/core/lib/css/blueprint.css';
 import '@blueprintjs/icons/lib/css/blueprint-icons.css';
 import '@blueprintjs/select/lib/css/blueprint-select.css';
-import '@blueprintjs/table/dist/table.css'; // Changed path here
+import '@blueprintjs/table/lib/table.css'; // Changed path again
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
