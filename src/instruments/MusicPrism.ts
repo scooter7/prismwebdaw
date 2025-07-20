@@ -1,5 +1,4 @@
 import { Instrument } from '../core/Instrument';
-import { WebAudioModule } from '@webaudiomodules/sdk';
 
 export class MusicPrism implements Instrument {
     readonly name = 'Music Prism';
