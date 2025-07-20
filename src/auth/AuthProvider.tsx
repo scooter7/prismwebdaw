@@ -16,43 +16,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(profileData);
-      }
-      setLoading(false);
-    };
+    const fetchSessionAndProfile = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        const currentSession = data.session;
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
 
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          const { data: profileData } = await supabase
+        if (currentSession?.user) {
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', session.user.id)
+            .eq('id', currentSession.user.id)
             .single();
+          if (profileError) throw profileError;
           setProfile(profileData);
+        }
+      } catch (error) {
+        console.error("Error fetching session and profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSessionAndProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        if (newSession?.user) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', newSession.user.id)
+            .single();
+          
+          if (profileError) {
+            console.error("Error fetching profile on auth state change:", profileError);
+            setProfile(null);
+          } else {
+            setProfile(profileData);
+          }
         } else {
           setProfile(null);
         }
+        // Ensure loading is false when auth state changes, e.g., on sign-in/sign-out
         setLoading(false);
       }
     );
 
     return () => {
-      subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
