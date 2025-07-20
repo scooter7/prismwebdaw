@@ -48,19 +48,19 @@
     --ring: 195 100% 50%;
     --radius: 0.25rem;
   }
-}
+} */
 
-@layer base {
+/* @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
   }
-}
+} */
 
 /* BlueprintJS Dark Theme Overrides */
-.bp5-tree-node-content {
+/* .bp5-tree-node-content {
   @apply text-foreground rounded-sm;
 }
 
