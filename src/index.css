@@ -1,8 +1,8 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
 
-@layer base {
+/* @layer base {
   :root {
     --background: hsl(0 0% 100%);
     --foreground: hsl(222.2 84% 4.9%);
@@ -86,4 +86,4 @@
 
 .bp5-tree-node-selected .bp5-tree-node-caret {
   @apply text-accent-foreground;
-}
+} */
