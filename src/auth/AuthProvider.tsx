@@ -28,16 +28,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("AuthProvider: Session fetched. User:", currentSession?.user);
 
         if (currentSession?.user) {
-          console.log("AuthProvider: Bypassing profile fetch for debugging.");
-          // Temporarily bypass profile fetch to unblock UI
-          // const { data: profileData, error: profileError } = await supabase
-          //   .from('profiles')
-          //   .select('*')
-          //   .eq('id', currentSession.user.id)
-          //   .single();
-          // if (profileError) throw profileError;
-          // setProfile(profileData);
-          // console.log("AuthProvider: Profile fetched:", profileData);
+          console.log("AuthProvider: Fetching user profile...");
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+          if (profileError) throw profileError;
+          setProfile(profileData);
+          console.log("AuthProvider: Profile fetched:", profileData);
         } else {
           console.log("AuthProvider: No user in session, profile set to null.");
           setProfile(null);
@@ -58,21 +57,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user) {
-          console.log("AuthProvider: Auth state changed, bypassing profile fetch for debugging.");
-          // Temporarily bypass profile fetch to unblock UI
-          // const { data: profileData, error: profileError } = await supabase
-          //   .from('profiles')
-          //   .select('*')
-          //   .eq('id', newSession.user.id)
-          //   .single();
+          console.log("AuthProvider: Auth state changed, fetching user profile...");
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', newSession.user.id)
+            .single();
           
-          // if (profileError) {
-          //   console.error("AuthProvider: Error fetching profile on auth state change:", profileError);
-          //   setProfile(null);
-          // } else {
-          //   setProfile(profileData);
-          //   console.log("AuthProvider: Profile fetched on auth state change:", profileData);
-          // }
+          if (profileError) {
+            console.error("AuthProvider: Error fetching profile on auth state change:", profileError);
+            setProfile(null);
+          } else {
+            setProfile(profileData);
+            console.log("AuthProvider: Profile fetched on auth state change:", profileData);
+          }
         } else {
           console.log("AuthProvider: Auth state changed, no user, profile set to null.");
           setProfile(null);

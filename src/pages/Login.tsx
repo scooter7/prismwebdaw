@@ -19,7 +19,7 @@ const Login = () => {
           appearance={{ theme: ThemeSupa }}
           providers={[]}
           theme="dark"
-          magicLink={true} // Enable magic link for passwordless login
+          magicLink={false} {/* Changed to false to enable email/password login */}
         />
         {session && (
           <div className="mt-4 text-center">
