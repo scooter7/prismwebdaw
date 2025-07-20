@@ -1,8 +1,8 @@
-console.log("WebDAW: App.tsx loaded");
-
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import Login from './pages/Login';
 import MainApp from './MainApp';
+
+console.log("WebDAW: App.tsx loaded");
 
 function App() {
   console.log("WebDAW: App component rendered");
