@@ -5,7 +5,7 @@ import { ScrollArea } from '../components/ui/scroll-area';
 import { Bot, User, Loader2, Music, BrainCircuit } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { cn } from '../lib/utils';
-import { useAuth } from '../auth/AuthProvider';
+import { useAuth } from '../auth/AuthContext';
 
 interface Message {
   role: 'user' | 'assistant';

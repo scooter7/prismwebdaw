@@ -1,4 +1,5 @@
-import { AuthProvider, useAuth } from './auth/AuthProvider';
+import { AuthProvider } from './auth/AuthProvider';
+import { useAuth } from './auth/AuthContext';
 import Login from './pages/Login';
 import MainApp from './MainApp';
 

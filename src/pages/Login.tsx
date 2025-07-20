@@ -1,7 +1,7 @@
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../integrations/supabase/client';
-import { useAuth } from '../auth/AuthProvider';
+import { useAuth } from '../auth/AuthContext';
 
 const Login = () => {
   const { session, signOut } = useAuth();
