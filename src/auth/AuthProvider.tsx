@@ -7,78 +7,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Initial state is true
 
   useEffect(() => {
     console.log("AuthProvider: useEffect triggered");
-    const fetchSessionAndProfile = async () => {
-      try {
-        console.log("AuthProvider: Attempting to fetch session...");
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        const currentSession = data.session;
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        console.log("AuthProvider: Session fetched. User:", currentSession?.user);
 
-        if (currentSession?.user) {
-          console.log("AuthProvider: Fetching user profile...");
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
-          if (profileError) throw profileError;
-          setProfile(profileData);
-          console.log("AuthProvider: Profile fetched:", profileData);
-        } else {
-          console.log("AuthProvider: No user in session, profile set to null.");
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error("AuthProvider: Error fetching session or profile:", error);
-      } finally {
-        console.log("AuthProvider: Setting loading to false.");
-        setLoading(false);
-      }
-    };
-
-    fetchSessionAndProfile();
-
+    // This listener fires immediately on mount with the current session status.
+    // It will also fire on subsequent auth state changes (sign-in, sign-out, etc.).
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         console.log("AuthProvider: Auth state changed. Event:", _event, "New Session:", newSession);
         setSession(newSession);
         setUser(newSession?.user ?? null);
+
         if (newSession?.user) {
           console.log("AuthProvider: Auth state changed, fetching user profile...");
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', newSession.user.id)
-            .single();
-          
-          if (profileError) {
-            console.error("AuthProvider: Error fetching profile on auth state change:", profileError);
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', newSession.user.id)
+              .single();
+            
+            if (profileError) {
+              console.error("AuthProvider: Error fetching profile on auth state change:", profileError);
+              setProfile(null);
+            } else {
+              setProfile(profileData);
+              console.log("AuthProvider: Profile fetched on auth state change:", profileData);
+            }
+          } catch (profileFetchError) {
+            console.error("AuthProvider: Unexpected error during profile fetch:", profileFetchError);
             setProfile(null);
-          } else {
-            setProfile(profileData);
-            console.log("AuthProvider: Profile fetched on auth state change:", profileData);
           }
         } else {
           console.log("AuthProvider: Auth state changed, no user, profile set to null.");
           setProfile(null);
         }
-        console.log("AuthProvider: Setting loading to false after auth state change.");
-        setLoading(false);
+        
+        // Crucial: Set loading to false only after the initial session determination.
+        // This ensures the app renders once the auth state is known.
+        if (loading) { 
+            console.log("AuthProvider: Setting loading to false after initial auth state determination.");
+            setLoading(false);
+        }
       }
     );
 
+    // Cleanup function for the effect.
     return () => {
       console.log("AuthProvider: Unsubscribing from auth listener.");
       authListener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [loading]); // Added 'loading' to dependency array to ensure the 'if (loading)' check works as intended on re-runs.
 
   const signOut = async () => {
     console.log("AuthProvider: Signing out...");
