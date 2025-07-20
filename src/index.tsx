@@ -6,8 +6,6 @@ import reportWebVitals from './reportWebVitals';
 
 import './index.css';
 
-console.log("WebDAW: index.tsx loaded");
-
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
 root.render(
