@@ -29,7 +29,7 @@ import { useRef, useState } from 'react';
 import { Engine } from './core/Engine';
 import { BUFFER_SIZE, SAMPLE_RATE } from './core/Config';
 import { AudioFileManager } from './core/AudioFileManager';
-import { AudioFileManagerContext, EngineContext } from './ui/Context';
+import { AudioFileManagerContext, EngineContext, AudioContextContext } from './ui/Context';
 import { Button } from './components/ui/button';
 import {
   Dialog,
@@ -282,126 +282,128 @@ function MainApp() {
 
   return (
     <EngineContext.Provider value={engine}>
-      <Dialog open={showAbout} onOpenChange={setShowAbout}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>About WebDAW</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center space-x-4">
-            <img src="logo-192.png" alt="WebDAW Logo" width="96" />
-            <div>
-              <p>Welcome to</p>
-              <h1 className="text-2xl font-bold">WebDAW</h1>
-              <p>Copyright &copy; 2023, 2024 Hans-Martin Will</p>
+      <AudioContextContext.Provider value={audioContext}>
+        <Dialog open={showAbout} onOpenChange={setShowAbout}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>About WebDAW</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center space-x-4">
+              <img src="logo-192.png" alt="WebDAW Logo" width="96" />
+              <div>
+                <p>Welcome to</p>
+                <h1 className="text-2xl font-bold">WebDAW</h1>
+                <p>Copyright &copy; 2023, 2024 Hans-Martin Will</p>
+              </div>
             </div>
-          </div>
-          <DialogDescription>
-            WebDAW is a digital audio workstation (DAW) that runs in the browser.
-          </DialogDescription>
-          <textarea
-            readOnly
-            className="mt-4 w-full h-32 p-2 border rounded text-xs bg-muted"
-            value={LICENSE}
-          />
-          <DialogFooter>
-            <Button onClick={() => setShowAbout(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={loading}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Loading Project</DialogTitle>
             <DialogDescription>
-              Please wait while the project is being loaded...
+              WebDAW is a digital audio workstation (DAW) that runs in the browser.
             </DialogDescription>
-          </DialogHeader>
-          <div className="w-full bg-muted rounded-full h-2.5 mt-4">
-            <div
-              className="bg-primary h-2.5 rounded-full"
-              style={{ width: `${loadingProgress * 100}%` }}
-            ></div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={confirmStopAudio} onOpenChange={setConfirmStopAudio}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Stop Audio?</DialogTitle>
-          </DialogHeader>
-          <DialogDescription>
-            Proceeding with this action will stop all audio. Are you sure you want to continue?
-          </DialogDescription>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmStopAudio(false)}>
-              No
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setConfirmStopAudio(false);
-                continueChangeProject.current?.();
-              }}
-            >
-              Yes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <div
-        className="h-screen max-h-screen w-screen flex flex-row bg-background text-foreground"
-        onClick={resumeAudio}
-      >
-        <main className="flex-grow flex flex-col overflow-hidden bg-background text-foreground">
-          <AudioFileManagerContext.Provider value={audioFileManager.current}>
-            <Project
-              project={project}
-              tracks={tracks}
-              setTracks={setTracks}
-              mixerVisible={mixerVisible}
-              setMixerVisible={setMixerVisible}
-              browserVisible={browserVisible}
-              setBrowserVisible={setBrowserVisible}
-              editingRegion={editingRegion}
-              setEditingRegion={setEditingRegion}
-              onRegionDoubleClick={handleRegionDoubleClick}
-              appendTrack={appendTrack}
+            <textarea
+              readOnly
+              className="mt-4 w-full h-32 p-2 border rounded text-xs bg-muted"
+              value={LICENSE}
             />
-          </AudioFileManagerContext.Provider>
-        </main>
-        <aside className="w-96 flex-shrink-0 border-l border-border bg-muted flex flex-col">
-            <div className="p-4 border-b border-border">
-              <h2 className="text-lg font-semibold flex items-center">
-                <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
-                AI Music Assistant
-              </h2>
-            </div>
-            <div className="flex-grow p-4 overflow-y-auto">
-              <AiChat onMidiPatternGenerated={handleMidiPatternGenerated} />
-            </div>
-        </aside>
-        <input
-          type="file"
-          ref={midiFileInputRef}
-          onChange={handleMidiFileImport}
-          accept=".mid,.midi"
-          style={{ display: 'none' }}
-        />
-      </div>
+            <DialogFooter>
+              <Button onClick={() => setShowAbout(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <Sheet open={showSettings} onOpenChange={setShowSettings}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Settings</SheetTitle>
-            <SheetDescription>
-              Configure your application settings here.
-            </SheetDescription>
-          </SheetHeader>
-        </SheetContent>
-      </Sheet>
+        <Dialog open={loading}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Loading Project</DialogTitle>
+              <DialogDescription>
+                Please wait while the project is being loaded...
+              </DialogDescription>
+            </DialogHeader>
+            <div className="w-full bg-muted rounded-full h-2.5 mt-4">
+              <div
+                className="bg-primary h-2.5 rounded-full"
+                style={{ width: `${loadingProgress * 100}%` }}
+              ></div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={confirmStopAudio} onOpenChange={setConfirmStopAudio}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Stop Audio?</DialogTitle>
+            </DialogHeader>
+            <DialogDescription>
+              Proceeding with this action will stop all audio. Are you sure you want to continue?
+            </DialogDescription>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setConfirmStopAudio(false)}>
+                No
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setConfirmStopAudio(false);
+                  continueChangeProject.current?.();
+                }}
+              >
+                Yes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <div
+          className="h-screen max-h-screen w-screen flex flex-row bg-background text-foreground"
+          onClick={resumeAudio}
+        >
+          <main className="flex-grow flex flex-col overflow-hidden bg-background text-foreground">
+            <AudioFileManagerContext.Provider value={audioFileManager.current}>
+              <Project
+                project={project}
+                tracks={tracks}
+                setTracks={setTracks}
+                mixerVisible={mixerVisible}
+                setMixerVisible={setMixerVisible}
+                browserVisible={browserVisible}
+                setBrowserVisible={setBrowserVisible}
+                editingRegion={editingRegion}
+                setEditingRegion={setEditingRegion}
+                onRegionDoubleClick={handleRegionDoubleClick}
+                appendTrack={appendTrack}
+              />
+            </AudioFileManagerContext.Provider>
+          </main>
+          <aside className="w-96 flex-shrink-0 border-l border-border bg-muted flex flex-col">
+              <div className="p-4 border-b border-border">
+                <h2 className="text-lg font-semibold flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
+                  AI Music Assistant
+                </h2>
+              </div>
+              <div className="flex-grow p-4 overflow-y-auto">
+                <AiChat onMidiPatternGenerated={handleMidiPatternGenerated} />
+              </div>
+          </aside>
+          <input
+            type="file"
+            ref={midiFileInputRef}
+            onChange={handleMidiFileImport}
+            accept=".mid,.midi"
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        <Sheet open={showSettings} onOpenChange={setShowSettings}>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Settings</SheetTitle>
+              <SheetDescription>
+                Configure your application settings here.
+              </SheetDescription>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>
+      </AudioContextContext.Provider>
     </EngineContext.Provider>
   );
 }
