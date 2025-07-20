@@ -2,8 +2,9 @@ import { FunctionComponent, useState, useRef, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
 import { ScrollArea } from '../components/ui/scroll-area';
-import { Bot, User, Loader2 } from 'lucide-react';
+import { Bot, User, Loader2, Music, BrainCircuit } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
+import { cn } from '../lib/utils';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,6 +16,7 @@ interface AiChatProps {
 }
 
 export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated }) => {
+  const [mode, setMode] = useState<'create' | 'learn'>('create');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +38,8 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('gemini-chat', {
+      const functionName = mode === 'create' ? 'gemini-chat' : 'gemini-rag-chat';
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { prompt: input },
       });
 
@@ -46,24 +49,25 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
       
       let assistantContent = data.response;
 
-      const midiRegex = /\[WEBDAW_MIDI\]([\s\S]*?)\[\/WEBDAW_MIDI\]/;
-      const midiMatch = assistantContent.match(midiRegex);
+      if (mode === 'create') {
+        const midiRegex = /\[WEBDAW_MIDI\]([\s\S]*?)\[\/WEBDAW_MIDI\]/;
+        const midiMatch = assistantContent.match(midiRegex);
 
-      if (midiMatch && midiMatch[1]) {
-        try {
-          // The AI might wrap the JSON in markdown, so we need to clean it up.
-          const cleanedJsonString = midiMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
-          const midiData = JSON.parse(cleanedJsonString);
-          
-          if (midiData.type === 'midi_patterns' && Array.isArray(midiData.patterns)) {
-            for (const pattern of midiData.patterns) {
-              await onMidiPatternGenerated(pattern);
+        if (midiMatch && midiMatch[1]) {
+          try {
+            const cleanedJsonString = midiMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
+            const midiData = JSON.parse(cleanedJsonString);
+            
+            if (midiData.type === 'midi_patterns' && Array.isArray(midiData.patterns)) {
+              for (const pattern of midiData.patterns) {
+                await onMidiPatternGenerated(pattern);
+              }
             }
+            
+            assistantContent = assistantContent.replace(midiRegex, '').trim();
+          } catch (jsonError) {
+            console.error("Failed to parse MIDI JSON from AI response:", jsonError);
           }
-          
-          assistantContent = assistantContent.replace(midiRegex, '').trim();
-        } catch (jsonError) {
-          console.error("Failed to parse MIDI JSON from AI response:", jsonError);
         }
       }
       
@@ -80,15 +84,35 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
 
   return (
     <div className="flex flex-col h-full">
-      <p className="text-muted-foreground text-sm mb-4">
-        Your creative partner for making music. Ask for ideas, instruments, or feedback.
+      <div className="flex justify-center mb-4 p-1 bg-background rounded-lg">
+        <Button 
+          variant={mode === 'create' ? 'secondary' : 'ghost'} 
+          onClick={() => setMode('create')}
+          className="flex-1"
+        >
+          <Music className="h-4 w-4 mr-2"/>
+          Create
+        </Button>
+        <Button 
+          variant={mode === 'learn' ? 'secondary' : 'ghost'} 
+          onClick={() => setMode('learn')}
+          className="flex-1"
+        >
+          <BrainCircuit className="h-4 w-4 mr-2"/>
+          Learn
+        </Button>
+      </div>
+      <p className="text-muted-foreground text-sm mb-4 text-center">
+        {mode === 'create'
+          ? 'Your creative partner for making music.'
+          : 'Your music theory expert. Ask about scales, chords, genres, and more.'}
       </p>
       <ScrollArea className="flex-grow mb-4 pr-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
               {message.role === 'assistant' && <Bot className="h-6 w-6 flex-shrink-0 text-yellow-400" />}
-              <div className={`rounded-lg px-3 py-2 text-sm ${message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-muted'}`}>
+              <div className={cn('rounded-lg px-3 py-2 text-sm max-w-[85%]', message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-muted')}>
                 <p className="whitespace-pre-wrap">{message.content}</p>
               </div>
               {message.role === 'user' && <User className="h-6 w-6 flex-shrink-0" />}
@@ -108,7 +132,7 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Create a funky bassline..."
+          placeholder={mode === 'create' ? 'Create a funky bassline...' : 'What is a major scale?'}
           className="flex-grow bg-background/80"
           disabled={isLoading}
           onKeyDown={(e) => {
