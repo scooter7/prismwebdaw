@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 console.log("GEMINI-CHAT FUNCTION: Top-level script execution. Cold start or new instance.");
 
@@ -10,12 +9,6 @@ const corsHeaders = {
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
-const GEMINI_EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`;
-
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-)
 
 const SYSTEM_PROMPT_BASE = `You are an expert AI music assistant integrated into a Digital Audio Workstation called WebDAW. Your role is to help users compose music. You have deep knowledge of all musical styles, music theory, instrumentation, and effects.
 
@@ -47,23 +40,6 @@ The JSON format is an object containing a list of patterns, as follows:
 - For other requests, respond conversationally without the JSON block.
 `;
 
-async function generateEmbedding(text: string) {
-  const response = await fetch(GEMINI_EMBEDDING_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: "models/text-embedding-004",
-      content: { parts: [{ text }] }
-    }),
-  });
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Failed to generate embedding: ${errorBody}`);
-  }
-  const { embedding } = await response.json();
-  return embedding.values;
-}
-
 const handler = async (req: Request): Promise<Response> => {
   console.log(`GEMINI-CHAT FUNCTION: Request received: ${req.method} ${req.url}`);
 
@@ -92,30 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // RAG Part: Find relevant documents
-    const queryEmbedding = await generateEmbedding(prompt);
-    
-    const { data: documents, error: matchError } = await supabaseAdmin.rpc('match_music_theory_docs', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.7, // Adjust this threshold as needed
-      match_count: 5,       // Get top 5 most relevant chunks
-    });
-
-    if (matchError) {
-      console.error("Error matching documents:", matchError);
-    }
-
-    let contextText = "";
-    if (documents && documents.length > 0) {
-      contextText = documents.map((doc: any) => `- ${doc.content}`).join('\n');
-    }
-
-    let systemPrompt = SYSTEM_PROMPT_BASE;
-    if (contextText) {
-      systemPrompt += `\n\nHere is some relevant information from your knowledge base to help you answer the user's request:\n${contextText}`;
-    }
-
-    const fullPrompt = `${systemPrompt}\n\nUser's request: "${prompt}"`;
+    const fullPrompt = `${SYSTEM_PROMPT_BASE}\n\nUser's request: "${prompt}"`;
 
     console.log("GEMINI-CHAT FUNCTION: Calling Gemini API...");
     const geminiResponse = await fetch(GEMINI_API_URL, {
