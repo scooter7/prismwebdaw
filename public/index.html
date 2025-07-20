@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
@@ -22,6 +22,17 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>WebDAW</title>
+    <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent scrollbars if not needed */
+      }
+      body {
+        background-color: #1a1a1a; /* Dark background for visibility */
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
