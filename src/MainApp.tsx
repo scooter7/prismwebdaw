@@ -175,6 +175,7 @@ function MainApp() {
   }
 
   function appendTrack(trackType: string) {
+    if (!project) return;
     let newTrack: AbstractTrack | null = null;
     if (trackType === 'audio') {
       newTrack = new AudioTrack();
@@ -197,7 +198,7 @@ function MainApp() {
 
   const handleMidiFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) {
+    if (!file || !project) {
       return;
     }
 
@@ -231,6 +232,7 @@ function MainApp() {
   };
 
   const handleMidiPatternGenerated = async (pattern: any) => {
+    if (!project) return;
     if (!pattern.trackName || !pattern.notes || !Array.isArray(pattern.notes) || pattern.notes.length === 0) {
       console.error('Invalid MIDI pattern object received from AI', pattern);
       return;
@@ -276,6 +278,7 @@ function MainApp() {
   };
 
   const handleRegionDoubleClick = (trackIndex: number, regionIndex: number) => {
+    if (!project) return;
     const track = project.tracks[trackIndex];
     const region = track.regions[regionIndex];
     if (track.type === 'instrument' && region) {
