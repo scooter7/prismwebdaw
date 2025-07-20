@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BlueprintJS styles */
-@import "@blueprintjs/core/lib/css/blueprint.css";
-@import "@blueprintjs/icons/lib/css/blueprint-icons.css";
-@import "@blueprintjs/select/lib/css/blueprint-select.css";
-@import "@blueprintjs/table/lib/css/blueprint-table.css";
-
 @layer base {
   :root {
     --background: hsl(0 0% 100%);
