@@ -1,5 +1,4 @@
 import { Instrument } from '../core/Instrument';
-import * as Tone from 'tone';
 
 const pianoSamples = {
   A0: 'A0.mp3', C1: 'C1.mp3', 'D#1': 'Ds1.mp3', 'F#1': 'Fs1.mp3', A1: 'A1.mp3', C2: 'C2.mp3', 'D#2': 'Ds2.mp3', 'F#2': 'Fs2.mp3', A2: 'A2.mp3', C3: 'C3.mp3', 'D#3': 'Ds3.mp3', 'F#3': 'Fs3.mp3', A3: 'A3.mp3', C4: 'C4.mp3', 'D#4': 'Ds4.mp3', 'F#4': 'Fs4.mp3', A4: 'A4.mp3', C5: 'C5.mp3', 'D#5': 'Ds5.mp3', 'F#5': 'Fs5.mp3', A5: 'A5.mp3', C6: 'C6.mp3', 'D#6': 'Ds6.mp3', 'F#7': 'Fs7.mp3', A7: 'A7.mp3', C8: 'C8.mp3',
@@ -15,14 +14,20 @@ const drumSamples = {
 const drumBaseUrl = 'https://yezjxwahexsfbvhfxsji.supabase.co/storage/v1/object/public/samples/';
 
 export class SoundFontInstrument implements Instrument {
-  private sampler: Tone.Sampler | null = null;
+  private sampler: any | null = null;
   public name: string;
+  private Tone: any = null;
 
   constructor(instrumentName: string) {
     this.name = instrumentName;
   }
 
   async initialize(context: AudioContext): Promise<void> {
+    if (!this.Tone) {
+      this.Tone = await import('tone');
+    }
+    const Tone = this.Tone;
+
     return new Promise((resolve, reject) => {
       // Use the existing AudioContext with Tone.js
       Tone.setContext(context);
@@ -47,7 +52,7 @@ export class SoundFontInstrument implements Instrument {
           console.log(`Tone.js Sampler instrument '${this.name}' loaded successfully from ${baseUrl}.`);
           resolve();
         },
-        onerror: (error) => {
+        onerror: (error: any) => {
           console.error(`Error loading sample for ${this.name} from base URL ${baseUrl}. Full error:`, error);
           reject(error);
         }
@@ -66,15 +71,15 @@ export class SoundFontInstrument implements Instrument {
   }
 
   noteOn(note: number, velocity: number, time: number): void {
-    if (!this.sampler) return;
-    const freq = Tone.Frequency(note, 'midi');
+    if (!this.sampler || !this.Tone) return;
+    const freq = this.Tone.Frequency(note, 'midi');
     const vel = velocity / 127;
     this.sampler.triggerAttack(freq.toNote(), time, vel);
   }
 
   noteOff(note: number, time: number): void {
-    if (!this.sampler) return;
-    const freq = Tone.Frequency(note, 'midi');
+    if (!this.sampler || !this.Tone) return;
+    const freq = this.Tone.Frequency(note, 'midi');
     this.sampler.triggerRelease([freq.toNote()], time);
   }
 
