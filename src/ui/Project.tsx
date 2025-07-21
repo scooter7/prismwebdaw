@@ -239,40 +239,35 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
       track: props.project.tracks[trackIndex],
       region: region,
     });
-    // Use shallow copy to update state
+    // Use shallow copy of the tracks array to trigger state update
     props.setTracks([...props.project.tracks]);
   }
 
-  // Shallow copy version to avoid deep cloning AudioBuffer
-  const updateTracksImmutable = (trackIndex: number, regionIndex: number, newRegion: MidiRegion) => {
-    const newTracks = props.tracks.map((track, tIdx) => {
-      if (tIdx !== trackIndex) return track;
-      const newRegions = track.regions.map((region, rIdx) => {
-        return rIdx === regionIndex ? newRegion : region;
-      });
-      // Shallow copy the track and replace regions
-      return { ...track, regions: newRegions };
-    });
-    props.project.tracks = newTracks;
-    props.setTracks(newTracks);
-  };
+  // Removed updateTracksImmutable helper function
 
   function handleMoveRegion(trackIndex: number, regionIndex: number, newPosition: Location) {
-    const region = { ...props.tracks[trackIndex].regions[regionIndex] };
-    region.position = newPosition;
-    updateTracksImmutable(trackIndex, regionIndex, region as MidiRegion);
+    const track = props.project.tracks[trackIndex];
+    const region = track.regions[regionIndex];
+    region.position = newPosition; // Directly modify the existing region object
+    props.setTracks([...props.project.tracks]); // Trigger re-render
   }
 
   function handleResizeRegion(trackIndex: number, regionIndex: number, newLength: Duration) {
-    const region = { ...props.tracks[trackIndex].regions[regionIndex] };
-    region.length = newLength;
-    updateTracksImmutable(trackIndex, regionIndex, region as MidiRegion);
+    const track = props.project.tracks[trackIndex];
+    const region = track.regions[regionIndex];
+    region.length = newLength; // Directly modify the existing region object
+    props.setTracks([...props.project.tracks]); // Trigger re-render
   }
 
   const handleUpdateMidiRegion = (updatedRegion: MidiRegion) => {
     if (props.editingRegion) {
       const { trackIndex, regionIndex } = props.editingRegion;
-      updateTracksImmutable(trackIndex, regionIndex, updatedRegion);
+      const track = props.project.tracks[trackIndex];
+      // Assuming updatedRegion is the same instance or a new instance that replaces the old one
+      // If updatedRegion is a new instance, replace it in the array
+      // If it's the same instance with modified properties, just trigger re-render
+      track.regions[regionIndex] = updatedRegion; // Replace the region object
+      props.setTracks([...props.project.tracks]); // Trigger re-render
     }
   };
 

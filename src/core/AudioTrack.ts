@@ -1,4 +1,3 @@
-import { clone } from 'lodash';
 import { Registry } from '../effects/Default';
 import { AudioEffect } from './AudioEffect';
 import { AudioFileResolver } from './AudioFile';
@@ -240,8 +239,8 @@ export class AudioTrack extends AbstractTrack {
         const truncatedSize = location.sub(previousRegion.position, signature);
         previousRegion.size = truncatedSize;
       }
-      // Use shallow copy to avoid deep cloning AudioBuffer
-      this.regions[index - 1] = { ...previousRegion };
+      // Directly modify the existing object, no need for shallow copy here
+      // this.regions[index - 1] = { ...previousRegion }; // REMOVED
     }
 
     // Logic to ensure that the region is not overlapping with any other region
@@ -272,8 +271,8 @@ export class AudioTrack extends AbstractTrack {
           nextRegion.size = newNextSize;
           nextRegion.trim = newNextTrim;
 
-          // Use shallow copy to avoid deep cloning AudioBuffer
-          this.regions[index + 1] = { ...nextRegion };
+          // Directly modify the existing object, no need for shallow copy here
+          // this.regions[index + 1] = { ...nextRegion }; // REMOVED
           break;
         } else {
           // The new region is the longer one. We remove the existing region and iterate.
@@ -290,15 +289,15 @@ export class AudioTrack extends AbstractTrack {
           region.size = truncatedSize;
         }
 
-        // Use shallow copy to avoid deep cloning AudioBuffer
-        this.regions[index + 1] = { ...nextRegion };
+        // Directly modify the existing object, no need for shallow copy here
+        // this.regions[index + 1] = { ...nextRegion }; // REMOVED
         break;
       } else {
         break;
       }
     }
 
-    // Use shallow copy for the regions array
+    // Use shallow copy for the regions array to trigger React re-render if this array is part of state
     this.regions = [...this.regions];
   }
 
