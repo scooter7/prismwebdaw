@@ -12,36 +12,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     console.log('AuthProvider: useEffect mounted, setting up auth listener.');
 
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('AuthProvider: Initial getSession result:', session);
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('AuthProvider: Error getting initial session:', error);
+      } finally {
+        setLoading(false);
+        console.log('AuthProvider: Initial loading set to false.');
+      }
+    };
+
+    getInitialSession(); // Call it once on mount
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         console.log(`AuthProvider: Auth state changed event: ${_event}, newSession:`, newSession);
-        
         setSession(newSession);
         setUser(newSession?.user ?? null);
-        
-        // Temporarily skipping profile fetch to isolate loading issue
-        // if (newSession?.user) {
-        //   try {
-        //     const { data: profileData, error: profileError } = await supabase
-        //       .from('profiles')
-        //       .select('*')
-        //       .eq('id', newSession.user.id)
-        //       .maybeSingle();
-        //     if (profileError && profileError.code !== 'PGRST116') {
-        //       console.error('AuthProvider: Error fetching profile:', profileError);
-        //     } else {
-        //       setProfile(profileData);
-        //     }
-        //   } catch (profileFetchError) {
-        //     console.error('AuthProvider: Error fetching profile (catch block):', profileFetchError);
-        //   }
-        // } else {
-        //   setProfile(null);
-        // }
-
-        // Crucially, set loading to false directly after session/user update
-        setLoading(false);
-        console.log('AuthProvider: Loading set to false.');
+        setLoading(false); // Ensure loading is false after any state change
+        console.log('AuthProvider: Loading set to false after auth state change.');
       }
     );
 
