@@ -1,14 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 
-console.log("GEMINI-CHAT FUNCTION: Top-level script execution. Cold start or new instance.");
+console.log("OPENAI-CHAT FUNCTION: Top-level script execution. Cold start or new instance.");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+// Use OPENAI_API_KEY instead of GEMINI_API_KEY
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
 
 const SYSTEM_PROMPT_BASE = `You are an expert AI music assistant integrated into a Digital Audio Workstation called WebDAW. Your role is to help users compose music. You have deep knowledge of all musical styles, music theory, instrumentation, and effects.
 
@@ -41,70 +42,73 @@ The JSON format is an object containing a list of patterns, as follows:
 `;
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log(`GEMINI-CHAT FUNCTION: Request received: ${req.method} ${req.url}`);
+  console.log(`OPENAI-CHAT FUNCTION: Request received: ${req.method} ${req.url}`);
 
   if (req.method === 'OPTIONS') {
-    console.log("GEMINI-CHAT FUNCTION: Handling OPTIONS request.");
+    console.log("OPENAI-CHAT FUNCTION: Handling OPTIONS request.");
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log("GEMINI-CHAT FUNCTION: Handling POST request");
+    console.log("OPENAI-CHAT FUNCTION: Handling POST request");
     const { prompt } = await req.json();
 
     if (!prompt) {
-      console.error("GEMINI-CHAT FUNCTION: Error: Prompt is required");
+      console.error("OPENAI-CHAT FUNCTION: Error: Prompt is required");
       return new Response(JSON.stringify({ error: 'Prompt is required' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
     }
 
-    if (!GEMINI_API_KEY) {
-      console.error("GEMINI-CHAT FUNCTION: Error: Gemini API key is not set up.");
-      return new Response(JSON.stringify({ error: 'Gemini API key is not set up.' }), {
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI-CHAT FUNCTION: Error: OpenAI API key is not set up.");
+      return new Response(JSON.stringify({ error: 'OpenAI API key is not set up.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
 
-    const fullPrompt = `${SYSTEM_PROMPT_BASE}\n\nUser's request: "${prompt}"`;
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT_BASE },
+      { role: "user", content: prompt }
+    ];
 
-    console.log("GEMINI-CHAT FUNCTION: Calling Gemini API...");
-    const geminiResponse = await fetch(GEMINI_API_URL, {
+    console.log("OPENAI-CHAT FUNCTION: Calling OpenAI API...");
+    const openaiResponse = await fetch(OPENAI_CHAT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}` // Use OpenAI API Key
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: fullPrompt
-          }]
-        }]
+        model: "gpt-4o-mini", // Specify the model
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1000,
       })
     });
 
-    console.log("GEMINI-CHAT FUNCTION: Gemini response status:", geminiResponse.status);
-    if (!geminiResponse.ok) {
-      const errorBody = await geminiResponse.text();
-      console.error("GEMINI-CHAT FUNCTION: Gemini API Error:", errorBody);
-      return new Response(JSON.stringify({ error: 'Failed to get response from Gemini API.' }), {
+    console.log("OPENAI-CHAT FUNCTION: OpenAI response status:", openaiResponse.status);
+    if (!openaiResponse.ok) {
+      const errorBody = await openaiResponse.text();
+      console.error("OPENAI-CHAT FUNCTION: OpenAI API Error:", errorBody);
+      return new Response(JSON.stringify({ error: 'Failed to get response from OpenAI API.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: geminiResponse.status,
+        status: openaiResponse.status,
       });
     }
 
-    const geminiData = await geminiResponse.json();
-    const assistantResponse = geminiData.candidates[0].content.parts[0].text;
-    console.log("GEMINI-CHAT FUNCTION: Successfully got response from Gemini.");
+    const openaiData = await openaiResponse.json();
+    const assistantResponse = openaiData.choices[0].message.content; // Extract content from OpenAI response
+    console.log("OPENAI-CHAT FUNCTION: Successfully got response from OpenAI.");
 
     return new Response(JSON.stringify({ response: assistantResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error) {
-    console.error("GEMINI-CHAT FUNCTION: Top-level error caught in handler:", error.message);
+    console.error("OPENAI-CHAT FUNCTION: Top-level error caught in handler:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

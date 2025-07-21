@@ -9,10 +9,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`;
-const STREAMING_GEMINI_CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?key=${GEMINI_API_KEY}`;
-const NON_STREAMING_GEMINI_CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`; // Added non-streaming URL
+// Use OPENAI_API_KEY instead of GEMINI_API_KEY
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const OPENAI_EMBEDDING_URL = "https://api.openai.com/v1/embeddings";
+const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"; // Unified chat URL for streaming/non-streaming
 
 // Initialize Supabase client
 const supabaseAdmin = createClient(
@@ -21,22 +21,25 @@ const supabaseAdmin = createClient(
 )
 
 async function generateEmbedding(text: string) {
-  console.log("GENERATE-EMBEDDING-FOR-RAG: Generating embedding for text snippet.");
-  const response = await fetch(GEMINI_EMBEDDING_URL, {
+  console.log("OPENAI-RAG-CHAT: Generating embedding for text snippet.");
+  const response = await fetch(OPENAI_EMBEDDING_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}` // Use OpenAI API Key
+    },
     body: JSON.stringify({
-      model: "models/text-embedding-004",
-      content: { parts: [{ text }] }
+      model: "text-embedding-ada-002", // OpenAI's embedding model
+      input: text
     }),
   });
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(`Failed to generate embedding: ${errorBody}`);
   }
-  const { embedding } = await response.json();
-  console.log("GENERATE-EMBEDDING-FOR-RAG: Embedding generated successfully.");
-  return embedding.values;
+  const { data } = await response.json();
+  console.log("OPENAI-RAG-CHAT: Embedding generated successfully.");
+  return data[0].embedding; // OpenAI returns an array of embeddings
 }
 
 const SYSTEM_PROMPT_LEARN = `You are an expert AI music theory assistant integrated into a Digital Audio Workstation called WebDAW. Your role is to help users learn about music. You have deep knowledge of all musical styles, music theory, instrumentation, and effects.
@@ -50,32 +53,32 @@ Context:
 `;
 
 serve(async (req) => {
-  console.log("GENERATE-EMBEDDING-FOR-RAG: Handler entered.");
+  console.log("OPENAI-RAG-CHAT: Handler entered.");
 
   if (req.method === 'OPTIONS') {
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Handling OPTIONS request.");
+    console.log("OPENAI-RAG-CHAT: Handling OPTIONS request.");
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Attempting to parse request body.");
+    console.log("OPENAI-RAG-CHAT: Attempting to parse request body.");
     const { prompt } = await req.json()
-    console.log(`GENERATE-EMBEDDING-FOR-RAG: Received prompt: "${prompt}"`);
+    console.log(`OPENAI-RAG-CHAT: Received prompt: "${prompt}"`);
 
     if (!prompt) throw new Error("Prompt is required");
-    if (!GEMINI_API_KEY) {
-      console.error("GENERATE-EMBEDDING-FOR-RAG: Error: Gemini API key is not set up.");
-      return new Response(JSON.stringify({ error: 'Gemini API key is not set up.' }), {
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI-RAG-CHAT: Error: OpenAI API key is not set up.");
+      return new Response(JSON.stringify({ error: 'OpenAI API key is not set up.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
 
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Calling generateEmbedding.");
+    console.log("OPENAI-RAG-CHAT: Calling generateEmbedding.");
     const queryEmbedding = await generateEmbedding(prompt);
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Query embedding generated.");
+    console.log("OPENAI-RAG-CHAT: Query embedding generated.");
 
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Calling Supabase RPC for document matching.");
+    console.log("OPENAI-RAG-CHAT: Calling Supabase RPC for document matching.");
     const { data: documents, error: matchError } = await supabaseAdmin.rpc('match_music_theory_docs', {
       query_embedding: queryEmbedding,
       match_threshold: 0.7,
@@ -83,104 +86,53 @@ serve(async (req) => {
     });
 
     if (matchError) {
-      console.error("GENERATE-EMBEDDING-FOR-RAG: Error matching documents:", matchError);
+      console.error("OPENAI-RAG-CHAT: Error matching documents:", matchError);
       throw matchError;
     }
-    console.log(`GENERATE-EMBEDDING-FOR-RAG: Found ${documents.length} matching documents.`);
+    console.log(`OPENAI-RAG-CHAT: Found ${documents.length} matching documents.`);
 
     const contextText = documents.map((doc: any) => doc.content).join('\n\n');
     const finalPrompt = SYSTEM_PROMPT_LEARN.replace('{CONTEXT}', contextText) + `\n\nUser's question: "${prompt}"`;
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Final prompt prepared.");
+    console.log("OPENAI-RAG-CHAT: Final prompt prepared.");
 
-    // --- TEMPORARY: Switch to non-streaming for debugging ---
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Calling Gemini NON-STREAMING API for debugging.");
-    const geminiResponse = await fetch(NON_STREAMING_GEMINI_CHAT_URL, {
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT_LEARN.replace('{CONTEXT}', contextText) },
+      { role: "user", content: prompt }
+    ];
+
+    console.log("OPENAI-RAG-CHAT: Calling OpenAI NON-STREAMING API.");
+    const openaiResponse = await fetch(OPENAI_CHAT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}` // Use OpenAI API Key
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: finalPrompt }] }]
+        model: "gpt-4o-mini", // Specify the model
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1000,
       })
     });
 
-    console.log(`GENERATE-EMBEDDING-FOR-RAG: Gemini non-streaming response status: ${geminiResponse.status}`);
-    if (!geminiResponse.ok) {
-      const errorBody = await geminiResponse.text();
-      console.error("GENERATE-EMBEDDING-FOR-RAG: Gemini API Error (non-streaming):", errorBody);
-      throw new Error(`Gemini API Error: ${errorBody}`);
+    console.log(`OPENAI-RAG-CHAT: OpenAI non-streaming response status: ${openaiResponse.status}`);
+    if (!openaiResponse.ok) {
+      const errorBody = await openaiResponse.text();
+      console.error("OPENAI-RAG-CHAT: OpenAI API Error (non-streaming):", errorBody);
+      throw new Error(`OpenAI API Error: ${errorBody}`);
     }
 
-    const geminiData = await geminiResponse.json();
-    const assistantResponse = geminiData.candidates[0].content.parts[0].text;
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Successfully got non-streaming response from Gemini.");
+    const openaiData = await openaiResponse.json();
+    const assistantResponse = openaiData.choices[0].message.content;
+    console.log("OPENAI-RAG-CHAT: Successfully got non-streaming response from OpenAI.");
 
     return new Response(JSON.stringify({ response: assistantResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-    // --- END TEMPORARY CHANGE ---
-
-    /*
-    // Original streaming code (commented out for debugging)
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Calling Gemini streaming API.");
-    const geminiStreamResponse = await fetch(STREAMING_GEMINI_CHAT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: finalPrompt }] }]
-      })
-    });
-
-    console.log(`GENERATE-EMBEDDING-FOR-RAG: Gemini streaming response status: ${geminiStreamResponse.status}`);
-    if (!geminiStreamResponse.ok) {
-      const errorBody = await geminiStreamResponse.text();
-      console.error("GENERATE-EMBEDDING-FOR-RAG: Gemini API Error:", errorBody);
-      throw new Error(`Gemini API Error: ${errorBody}`);
-    }
-
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const textDecoder = new TextDecoder();
-    const geminiBodyReader = geminiStreamResponse.body!.getReader();
-
-    const pump = async () => {
-      while (true) {
-        const { done, value } = await geminiBodyReader.read();
-        if (done) {
-          writer.close();
-          break;
-        }
-        
-        const chunk = textDecoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
-        for (const line of lines) {
-          const jsonString = line.substring(6);
-          try {
-            const parsed = JSON.parse(jsonString);
-            const text = parsed.candidates[0]?.content?.parts[0]?.text;
-            if (text) {
-              writer.write(new TextEncoder().encode(text));
-            }
-          } catch (e) {
-            // Ignore parsing errors for incomplete json chunks
-          }
-        }
-      }
-    };
-
-    pump().catch(e => {
-      console.error("GENERATE-EMBEDDING-FOR-RAG: Error in stream pump:", e);
-      writer.abort(e);
-    });
-
-    console.log("GENERATE-EMBEDDING-FOR-RAG: Streaming response back to client.");
-    return new Response(readable, {
-      headers: { ...corsHeaders, 'Content-Type': 'text/plain; charset=utf-8' },
-      status: 200,
-    });
-    */
 
   } catch (error) {
-    console.error('GENERATE-EMBEDDING-FOR-RAG: Top-level error caught in function:', error.message);
+    console.error('OPENAI-RAG-CHAT: Top-level error caught in function:', error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
