@@ -44,8 +44,8 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
 
     try {
       if (mode === 'create') {
-        console.log("AiChat: Sending 'create' prompt to gemini-chat function.");
-        const { data, error } = await supabase.functions.invoke('gemini-chat', {
+        console.log("AiChat: Sending 'create' prompt to openai-chat function.");
+        const { data, error } = await supabase.functions.invoke('openai-chat', {
           body: { prompt: currentInput },
         });
 
@@ -90,8 +90,8 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           return;
         }
 
-        console.log("AiChat: Session is active. Sending 'learn' prompt to gemini-rag-chat function.");
-        const response = await fetch(`https://yezjxwahexsfbvhfxsji.supabase.co/functions/v1/gemini-rag-chat`, {
+        console.log("AiChat: Session is active. Sending 'learn' prompt to openai-rag-chat function.");
+        const response = await fetch(`https://yezjxwahexsfbvhfxsji.supabase.co/functions/v1/openai-rag-chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -100,10 +100,10 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           body: JSON.stringify({ prompt: currentInput }),
         });
 
-        console.log("AiChat: Response status from gemini-rag-chat:", response.status);
+        console.log("AiChat: Response status from openai-rag-chat:", response.status);
         if (!response.ok) {
           const errorData = await response.json();
-          console.error("AiChat: Error response from gemini-rag-chat:", errorData);
+          console.error("AiChat: Error response from openai-rag-chat:", errorData);
           throw new Error(errorData.error || 'Failed to fetch stream');
         }
 
