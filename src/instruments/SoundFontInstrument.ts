@@ -1,5 +1,5 @@
 import { Instrument } from '../core/Instrument';
-import WebAudioFontPlayer from 'webaudiofont';
+import WebAudioFontPlayer = require('webaudiofont');
 
 export class SoundFontInstrument implements Instrument {
   private player: WebAudioFontPlayer | null = null;
