@@ -30,7 +30,8 @@ export class SoundFontInstrument implements Instrument {
       console.log(`SoundFontInstrument: WebAudioFontPlayer script not found, loading it.`);
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://surikov.github.io/webaudiofont/dist/webaudiofont.js';
+        // Changed to a more reliable CDN for WebAudioFontPlayer
+        script.src = 'https://cdn.jsdelivr.net/npm/webaudiofont@latest/dist/webaudiofont.js';
         script.onload = () => {
           this.player = new window.WebAudioFontPlayer();
           console.log(`SoundFontInstrument: WebAudioFontPlayer script loaded.`);
