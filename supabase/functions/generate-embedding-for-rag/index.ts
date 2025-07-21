@@ -36,7 +36,7 @@ async function generateEmbedding(text: string) {
 }
 
 serve(async (req) => {
-  console.log("GENERATE-EMBEDDING-FOR-RAG: Function started."); // Added this line
+  console.log("GENERATE-EMBEDDING-FOR-RAG: Function started.");
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -68,7 +68,8 @@ serve(async (req) => {
     console.log(`Original file content length: ${fileContent.length}`);
     console.log(`First 500 chars of original content: ${fileContent.substring(0, 500)}`);
 
-    const cleanContent = fileContent.replace(/\s+/g, ' ').trim();
+    // Remove null characters before cleaning and chunking
+    const cleanContent = fileContent.replace(/\0/g, '').replace(/\s+/g, ' ').trim();
     console.log(`Cleaned content length: ${cleanContent.length}`);
     console.log(`First 500 chars of cleaned content: ${cleanContent.substring(0, 500)}`);
 
