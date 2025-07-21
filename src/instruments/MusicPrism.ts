@@ -15,8 +15,8 @@ export class MusicPrism implements Instrument {
         const wamUrl = 'https://main.d2z11ads4dq6v1.amplifyapp.com/index.js';
 
         try {
-            // Using a dynamic import to load the WAM module.
-            const { default: WamConstructor } = await import(wamUrl);
+            // Using a dynamic import with a webpack hint to treat it as a runtime URL.
+            const { default: WamConstructor } = await import(/* webpackIgnore: true */ wamUrl);
             
             const hostGroupId = `com.webdaw.host-${Math.floor(Math.random() * 1000000)}`;
 
