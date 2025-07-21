@@ -22,9 +22,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
 } from '../components/ui/dropdown-menu';
 
 /**
@@ -240,30 +237,11 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
                       Audio Track
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => props.appendTrack('music-prism')}>
-                      Music Prism Instrument
+                      Music Prism (WAM)
                     </DropdownMenuItem>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        Instrument Track
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => props.appendTrack('acoustic_grand_piano')}>
-                          Acoustic Grand Piano
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => props.appendTrack('drums')}>
-                          Drums
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => props.appendTrack('electric_guitar_clean')}>
-                          Electric Guitar (Clean)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => props.appendTrack('synth_bass_1')}>
-                          Synth Bass 1
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => props.appendTrack('string_ensemble_1')}>
-                          String Ensemble 1
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
+                    <DropdownMenuItem onClick={() => props.appendTrack('analog')}>
+                      Analog Synth
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

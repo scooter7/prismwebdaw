@@ -34,7 +34,14 @@ import { Button } from '../components/ui/button';
 import { InstrumentTrack } from '../core/InstrumentTrack';
 import { MusicPrism } from '../instruments/MusicPrism';
 import { WamGui } from './WamGui';
-import { createInstrument } from '../utils/instruments'; // Updated import path
+import { createInstrument } from '../utils/instruments';
+import { Plus } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 
 export type ProjectProps = {
   project: ProjectObj;
@@ -359,7 +366,9 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
           <Arrangement
             tracks={props.tracks}
             updateTrackEnablement={() => props.project.updateTrackEnablement()}
-            appendTrack={props.appendTrack}
+            appendTrack={(trackType: string) => {
+              props.appendTrack(trackType);
+            }}
             moveTrackToPosition={moveTrackToPosition}
             deleteTrack={deleteTrack}
             totalWidth={totalWidth}
