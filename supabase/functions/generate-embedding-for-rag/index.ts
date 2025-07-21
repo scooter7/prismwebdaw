@@ -36,6 +36,8 @@ async function generateEmbedding(text: string) {
 }
 
 serve(async (req) => {
+  console.log("GENERATE-EMBEDDING-FOR-RAG: Function started."); // Added this line
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
