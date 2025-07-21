@@ -1,0 +1,158 @@
+import { Analog } from '../instruments/Analog';
+import { MusicPrism } from '../instruments/MusicPrism';
+import { SoundFontInstrument } from '../instruments/SoundFontInstrument';
+import { Instrument } from '../core/Instrument';
+
+// Mapping of common instrument names to WebAudioFont instrument IDs
+const instrumentMap: { [key: string]: string } = {
+  'acoustic_grand_piano': '_tone_0000_SBLive_sf2',
+  'bright_acoustic_piano': '_tone_0001_SBLive_sf2',
+  'electric_grand_piano': '_tone_0002_SBLive_sf2',
+  'honkytonk_piano': '_tone_0003_SBLive_sf2',
+  'electric_piano_1': '_tone_0004_SBLive_sf2',
+  'electric_piano_2': '_tone_0005_SBLive_sf2',
+  'harpsichord': '_tone_0006_SBLive_sf2',
+  'clavinet': '_tone_0007_SBLive_sf2',
+  'celesta': '_tone_0008_SBLive_sf2',
+  'glockenspiel': '_tone_0009_SBLive_sf2',
+  'music_box': '_tone_000A_SBLive_sf2',
+  'vibraphone': '_tone_000B_SBLive_sf2',
+  'marimba': '_tone_000C_SBLive_sf2',
+  'xylophone': '_tone_000D_SBLive_sf2',
+  'tubular_bells': '_tone_000E_SBLive_sf2',
+  'dulcimer': '_tone_000F_SBLive_sf2',
+  'drawbar_organ': '_tone_0010_SBLive_sf2',
+  'percussive_organ': '_tone_0011_SBLive_sf2',
+  'rock_organ': '_tone_0012_SBLive_sf2',
+  'church_organ': '_tone_0013_SBLive_sf2',
+  'reed_organ': '_tone_0014_SBLive_sf2',
+  'accordion': '_tone_0015_SBLive_sf2',
+  'harmonica': '_tone_0016_SBLive_sf2',
+  'tango_accordion': '_tone_0017_SBLive_sf2',
+  'acoustic_guitar_nylon': '_tone_0018_SBLive_sf2',
+  'acoustic_guitar_steel': '_tone_0019_SBLive_sf2',
+  'electric_guitar_jazz': '_tone_001A_SBLive_sf2',
+  'electric_guitar_clean': '_tone_001B_SBLive_sf2',
+  'electric_guitar_muted': '_tone_001C_SBLive_sf2',
+  'overdriven_guitar': '_tone_001D_SBLive_sf2',
+  'distortion_guitar': '_tone_001E_SBLive_sf2',
+  'guitar_harmonics': '_tone_001F_SBLive_sf2',
+  'acoustic_bass': '_tone_0020_SBLive_sf2',
+  'electric_bass_finger': '_tone_0021_SBLive_sf2',
+  'electric_bass_pick': '_tone_0022_SBLive_sf2',
+  'fretless_bass': '_tone_0023_SBLive_sf2',
+  'slap_bass_1': '_tone_0024_SBLive_sf2',
+  'slap_bass_2': '_tone_0025_SBLive_sf2',
+  'synth_bass_1': '_tone_0026_SBLive_sf2',
+  'synth_bass_2': '_tone_0027_SBLive_sf2',
+  'violin': '_tone_0028_SBLive_sf2',
+  'viola': '_tone_0029_SBLive_sf2',
+  'cello': '_tone_002A_SBLive_sf2',
+  'contrabass': '_tone_002B_SBLive_sf2',
+  'tremolo_strings': '_tone_002C_SBLive_sf2',
+  'pizzicato_strings': '_tone_002D_SBLive_sf2',
+  'orchestral_harp': '_tone_002E_SBLive_sf2',
+  'timpani': '_tone_002F_SBLive_sf2',
+  'string_ensemble_1': '_tone_0030_SBLive_sf2',
+  'string_ensemble_2': '_tone_0031_SBLive_sf2',
+  'synth_strings_1': '_tone_0032_SBLive_sf2',
+  'synth_strings_2': '_tone_0033_SBLive_sf2',
+  'choir_aahs': '_tone_0038_SBLive_sf2',
+  'voice_oohs': '_tone_0039_SBLive_sf2',
+  'synth_voice': '_tone_003A_SBLive_sf2',
+  'orchestra_hit': '_tone_003B_SBLive_sf2',
+  'trumpet': '_tone_003C_SBLive_sf2',
+  'trombone': '_tone_003D_SBLive_sf2',
+  'tuba': '_tone_003E_SBLive_sf2',
+  'muted_trumpet': '_tone_003F_SBLive_sf2',
+  'french_horn': '_tone_0040_SBLive_sf2',
+  'brass_section': '_tone_0041_SBLive_sf2',
+  'synth_brass_1': '_tone_0042_SBLive_sf2',
+  'synth_brass_2': '_tone_0043_SBLive_sf2',
+  'soprano_sax': '_tone_0044_SBLive_sf2',
+  'alto_sax': '_tone_0045_SBLive_sf2',
+  'tenor_sax': '_tone_0046_SBLive_sf2',
+  'baritone_sax': '_tone_0047_SBLive_sf2',
+  'oboe': '_tone_0048_SBLive_sf2',
+  'english_horn': '_tone_0049_SBLive_sf2',
+  'bassoon': '_tone_004A_SBLive_sf2',
+  'clarinet': '_tone_004B_SBLive_sf2',
+  'piccolo': '_tone_004C_SBLive_sf2',
+  'flute': '_tone_004D_SBLive_sf2',
+  'recorder': '_tone_004E_SBLive_sf2',
+  'pan_flute': '_tone_004F_SBLive_sf2',
+  'blown_bottle': '_tone_0050_SBLive_sf2',
+  'shakuhachi': '_tone_0051_SBLive_sf2',
+  'whistle': '_tone_0052_SBLive_sf2',
+  'ocarina': '_tone_0053_SBLive_sf2',
+  'lead_1_square': '_tone_0054_SBLive_sf2',
+  'lead_2_sawtooth': '_tone_0055_SBLive_sf2',
+  'lead_3_calliope': '_tone_0056_SBLive_sf2',
+  'lead_4_chiff': '_tone_0057_SBLive_sf2',
+  'lead_5_charang': '_tone_0058_SBLive_sf2',
+  'lead_6_voice': '_tone_0059_SBLive_sf2',
+  'lead_7_fifths': '_tone_005A_SBLive_sf2',
+  'lead_8_bass_lead': '_tone_005B_SBLive_sf2',
+  'pad_1_new_age': '_tone_005C_SBLive_sf2',
+  'pad_2_warm': '_tone_005D_SBLive_sf2',
+  'pad_3_polysynth': '_tone_005E_SBLive_sf2',
+  'pad_4_choir': '_tone_005F_SBLive_sf2',
+  'pad_5_bowed': '_tone_0060_SBLive_sf2',
+  'pad_6_metallic': '_tone_0061_SBLive_sf2',
+  'pad_7_halo': '_tone_0062_SBLive_sf2',
+  'pad_8_sweep': '_tone_0063_SBLive_sf2',
+  'fx_1_rain': '_tone_0064_SBLive_sf2',
+  'fx_2_soundtrack': '_tone_0065_SBLive_sf2',
+  'fx_3_crystal': '_tone_0066_SBLive_sf2',
+  'fx_4_atmosphere': '_tone_0067_SBLive_sf2',
+  'fx_5_brightness': '_tone_0068_SBLive_sf2',
+  'fx_6_goblin': '_tone_0069_SBLive_sf2',
+  'fx_7_echoes': '_tone_006A_SBLive_sf2',
+  'fx_8_sci_fi': '_tone_006B_SBLive_sf2',
+  'sitar': '_tone_006C_SBLive_sf2',
+  'banjo': '_tone_006D_SBLive_sf2',
+  'shamisen': '_tone_006E_SBLive_sf2',
+  'koto': '_tone_006F_SBLive_sf2',
+  'kalimba': '_tone_0070_SBLive_sf2',
+  'bagpipe': '_tone_0071_SBLive_sf2',
+  'fiddle': '_tone_0072_SBLive_sf2',
+  'shanai': '_tone_0073_SBLive_sf2',
+  'tinkle_bell': '_tone_0074_SBLive_sf2',
+  'agogo': '_tone_0075_SBLive_sf2',
+  'steel_drums': '_tone_0076_SBLive_sf2',
+  'woodblock': '_tone_0077_SBLive_sf2',
+  'taiko_drum': '_tone_0078_SBLive_sf2',
+  'melodic_tom': '_tone_0079_SBLive_sf2',
+  'synth_drum': '_tone_007A_SBLive_sf2',
+  'reverse_cymbal': '_tone_007B_SBLive_sf2',
+  'guitar_fret_noise': '_tone_007C_SBLive_sf2',
+  'breath_noise': '_tone_007D_SBLive_sf2',
+  'seashore': '_tone_007E_SBLive_sf2',
+  'bird_tweet': '_tone_007F_SBLive_sf2',
+  'telephone_ring': '_tone_0080_SBLive_sf2',
+  'helicopter': '_tone_0081_SBLive_sf2',
+  'applause': '_tone_0082_SBLive_sf2',
+  'gunshot': '_tone_0083_SBLive_sf2',
+  'drums': '_drum_35_51_0_SBLive_sf2', // Special drum kit
+  'analog': 'analog', // Custom analog synth
+  'music_prism': 'music_prism', // Custom Music Prism WAM
+};
+
+export function createInstrument(name: string): Instrument {
+  const lowerName = name.toLowerCase();
+  if (lowerName === 'analog') {
+    return new Analog();
+  }
+  if (lowerName === 'music_prism') {
+    return new MusicPrism();
+  }
+  
+  const instrumentId = instrumentMap[lowerName];
+  if (instrumentId) {
+    return new SoundFontInstrument(name, instrumentId);
+  }
+  
+  // Default to acoustic grand piano if not found
+  console.warn(`Instrument '${name}' not found in map, defaulting to Acoustic Grand Piano.`);
+  return new SoundFontInstrument('acoustic_grand_piano', instrumentMap['acoustic_grand_piano']);
+}

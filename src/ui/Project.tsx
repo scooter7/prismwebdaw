@@ -35,7 +35,7 @@ import { Button } from '../components/ui/button';
 import { InstrumentTrack } from '../core/InstrumentTrack';
 import { MusicPrism } from '../instruments/MusicPrism';
 import { WamGui } from './WamGui';
-import { createInstrument } from '../MainApp';
+import { createInstrument } from '../utils/instruments'; // Updated import path
 
 export type ProjectProps = {
   project: ProjectObj;
