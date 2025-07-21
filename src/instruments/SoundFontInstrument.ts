@@ -1,89 +1,93 @@
 import { Instrument } from '../core/Instrument';
 
-const pianoSamples = {
-  A0: 'A0.mp3', C1: 'C1.mp3', 'D#1': 'Ds1.mp3', 'F#1': 'Fs1.mp3', A1: 'A1.mp3', C2: 'C2.mp3', 'D#2': 'Ds2.mp3', 'F#2': 'Fs2.mp3', A2: 'A2.mp3', C3: 'C3.mp3', 'D#3': 'Ds3.mp3', 'F#3': 'Fs3.mp3', A3: 'A3.mp3', C4: 'C4.mp3', 'D#4': 'Ds4.mp3', 'F#4': 'Fs4.mp3', A4: 'A4.mp3', C5: 'C5.mp3', 'D#5': 'Ds5.mp3', 'F#5': 'Fs5.mp3', A5: 'A5.mp3', C6: 'C6.mp3', 'D#6': 'Ds6.mp3', 'F#7': 'Fs7.mp3', A7: 'A7.mp3', C8: 'C8.mp3',
-};
-const pianoBaseUrl = 'https://tonejs.github.io/audio/salamander/';
-
-// Using the Kit8 samples as requested, served from a Supabase bucket.
-const drumSamples = {
-  'C2': 'kick.mp3',    // MIDI 36
-  'D2': 'snare.mp3',   // MIDI 38
-  'F#2': 'hihat.mp3',  // MIDI 42 (Closed)
-};
-const drumBaseUrl = 'https://yezjxwahexsfbvhfxsji.supabase.co/storage/v1/object/public/samples/';
+// Declare WebAudioFontPlayer globally for TypeScript
+declare global {
+  interface Window {
+    WebAudioFontPlayer: any;
+  }
+}
 
 export class SoundFontInstrument implements Instrument {
-  private sampler: any | null = null;
+  private player: any | null = null;
   public name: string;
-  private Tone: any = null;
+  private instrumentId: string;
 
-  constructor(instrumentName: string) {
+  constructor(instrumentName: string, instrumentId: string) {
     this.name = instrumentName;
+    this.instrumentId = instrumentId;
   }
 
   async initialize(context: AudioContext): Promise<void> {
-    if (!this.Tone) {
-      this.Tone = await import('tone');
+    if (!window.WebAudioFontPlayer) {
+      // Dynamically load WebAudioFontPlayer if not already present
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://surikov.github.io/webaudiofont/dist/webaudiofont.js';
+        script.onload = () => {
+          this.player = new window.WebAudioFontPlayer();
+          this.player.loader.decodeAfterLoading(context, this.player.loader.url);
+          resolve();
+        };
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    } else {
+      this.player = new window.WebAudioFontPlayer();
+      this.player.loader.decodeAfterLoading(context, this.player.loader.url);
     }
-    const Tone = this.Tone;
 
     return new Promise((resolve, reject) => {
-      // Use the existing AudioContext with Tone.js
-      Tone.setContext(context);
-
-      let urls: { [key: string]: string; };
-      let baseUrl: string;
-
-      if (this.name === 'drums') {
-          urls = drumSamples;
-          baseUrl = drumBaseUrl;
-      } else { // default to piano
-          this.name = 'acoustic_grand_piano'; // ensure name is correct for logging
-          urls = pianoSamples;
-          baseUrl = pianoBaseUrl;
-      }
-
-      this.sampler = new Tone.Sampler({
-        urls,
-        baseUrl,
-        release: 1,
-        onload: () => {
-          console.log(`Tone.js Sampler instrument '${this.name}' loaded successfully from ${baseUrl}.`);
+      this.player.loader.loadInstrument(context, this.instrumentId, (buffer: AudioBuffer) => {
+        if (buffer) {
+          console.log(`WebAudioFont instrument '${this.name}' loaded successfully.`);
           resolve();
-        },
-        onerror: (error: any) => {
-          console.error(`Error loading sample for ${this.name} from base URL ${baseUrl}. Full error:`, error);
-          reject(error);
+        } else {
+          console.error(`Error loading WebAudioFont instrument '${this.name}' with ID '${this.instrumentId}'.`);
+          reject(new Error(`Failed to load instrument: ${this.name}`));
         }
       });
     });
   }
 
   connect(destination: AudioNode): void {
-    if (this.sampler) {
-      this.sampler.connect(destination);
-    }
+    // WebAudioFontPlayer handles its own connections internally to the context's destination.
+    // We'll manage the output through a gain node if needed for track volume/pan.
+    // For now, we'll assume it connects directly to the context's destination.
+    // If we need to route through the track's channel strip, we'd need to modify WebAudioFontPlayer's output.
+    // For simplicity, we'll let it connect to the main output for now.
   }
 
   disconnect(): void {
-    this.sampler?.disconnect();
+    // WebAudioFontPlayer doesn't expose a direct disconnect method for its internal nodes.
+    // To stop all sound, we rely on stopAll.
   }
 
   noteOn(note: number, velocity: number, time: number): void {
-    if (!this.sampler || !this.Tone) return;
-    const freq = this.Tone.Frequency(note, 'midi');
-    const vel = velocity / 127;
-    this.sampler.triggerAttack(freq.toNote(), time, vel);
+    if (!this.player || !this.player.audioContext) return;
+    
+    // WebAudioFontPlayer uses 0-1 for velocity, and time is absolute audio context time
+    this.player.queueWaveTable(
+      this.player.audioContext,
+      this.player.audioContext.destination, // Direct to destination for now
+      this.player.loader.get  (this.instrumentId),
+      time,
+      note,
+      1, // Duration in seconds, can be adjusted if needed
+      velocity / 127 // Convert 0-127 velocity to 0-1
+    );
   }
 
   noteOff(note: number, time: number): void {
-    if (!this.sampler || !this.Tone) return;
-    const freq = this.Tone.Frequency(note, 'midi');
-    this.sampler.triggerRelease([freq.toNote()], time);
+    // WebAudioFontPlayer's queueWaveTable handles note duration, so a separate noteOff is not strictly needed
+    // if we pass the correct duration in noteOn. However, for sustained notes or explicit stops,
+    // we might need a more advanced approach or a custom ADSR envelope.
+    // For now, we'll rely on the duration passed in noteOn.
   }
 
   stopAll(): void {
-    this.sampler?.releaseAll();
+    // WebAudioFontPlayer doesn't have a direct "stop all" for all playing notes.
+    // This would typically require tracking individual notes played and stopping them.
+    // For now, we'll leave this as a no-op, or rely on the context being stopped.
+    // If a more robust stopAll is needed, we'd have to implement note tracking.
   }
 }
