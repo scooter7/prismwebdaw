@@ -12,6 +12,7 @@ export class SoundFontInstrument implements Instrument {
   public name: string;
   private instrumentId: string;
   private _isInitialized: boolean = false;
+  private _destinationNode: AudioNode | null = null; // Store the connected destination node
 
   constructor(instrumentName: string, instrumentId: string) {
     this.name = instrumentName;
@@ -59,25 +60,24 @@ export class SoundFontInstrument implements Instrument {
   }
 
   connect(destination: AudioNode): void {
-    // WebAudioFontPlayer handles its own connections internally to the context's destination.
-    // For simplicity, we'll let it connect to the main output for now.
-    // If we need to route through the track's channel strip, we'd need to modify WebAudioFontPlayer's output.
+    this._destinationNode = destination; // Store the destination node
   }
 
   disconnect(): void {
     // WebAudioFontPlayer doesn't expose a direct disconnect method for its internal nodes.
     // To stop all sound, we rely on stopAll.
+    this._destinationNode = null; // Clear the reference
   }
 
   noteOn(note: number, velocity: number, time: number): void {
-    if (!this._isInitialized || !this.player || !this.player.audioContext) {
-      console.warn(`Attempted to play note on uninitialized instrument: ${this.name}`);
+    if (!this._isInitialized || !this.player || !this.player.audioContext || !this._destinationNode) {
+      console.warn(`Attempted to play note on uninitialized or unconnected instrument: ${this.name}`);
       return;
     }
     
     this.player.queueWaveTable(
       this.player.audioContext,
-      this.player.audioContext.destination, // Direct to destination for now
+      this._destinationNode, // Use the stored destination node
       this.player.loader.get(this.instrumentId),
       time,
       note,
