@@ -77,11 +77,21 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           return newMessages;
         });
       } else { // Learn mode with streaming
+        if (!session) {
+          setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1].content = 'Please log in to use the Learn feature.';
+            return newMessages;
+          });
+          setIsLoading(false);
+          return;
+        }
+
         const response = await fetch(`https://yezjxwahexsfbvhfxsji.supabase.co/functions/v1/gemini-rag-chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ prompt: currentInput }),
         });
@@ -93,20 +103,37 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
 
         const reader = response.body!.getReader();
         const decoder = new TextDecoder();
+        let buffer = '';
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          setMessages(prev => {
-            const newMessages = [...prev];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage.role === 'assistant') {
-              lastMessage.content += chunk;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonString = line.substring(6);
+              try {
+                const parsed = JSON.parse(jsonString);
+                const text = parsed.candidates[0]?.content?.parts[0]?.text;
+                if (text) {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMessage = newMessages[newMessages.length - 1];
+                    if (lastMessage.role === 'assistant') {
+                      lastMessage.content += text;
+                    }
+                    return newMessages;
+                  });
+                }
+              } catch (e) {
+                console.warn("Failed to parse JSON chunk from stream:", e, "Chunk:", jsonString);
+              }
             }
-            return newMessages;
-          });
+          }
         }
       }
     } catch (err: any) {
@@ -178,7 +205,7 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           onChange={(e) => setInput(e.target.value)}
           placeholder={mode === 'create' ? 'Create a funky bassline...' : 'What is a major scale?'}
           className="flex-grow bg-background/80"
-          disabled={isLoading}
+          disabled={isLoading || (mode === 'learn' && !session)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -186,10 +213,15 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
             }
           }}
         />
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading || (mode === 'learn' && !session)}>
           Send
         </Button>
       </form>
+      {mode === 'learn' && !session && (
+        <p className="text-red-500 text-sm mt-2 text-center">
+          You must be logged in to use the Learn feature.
+        </p>
+      )}
     </div>
   );
 };
