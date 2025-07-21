@@ -1,5 +1,4 @@
 import { Instrument } from '../core/Instrument';
-import type WebAudioFontPlayer from 'webaudiofont';
 
 // A global promise to ensure the script is only loaded once.
 let webaudiofontPromise: Promise<any> | null = null;
