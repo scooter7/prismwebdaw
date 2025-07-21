@@ -60,7 +60,7 @@ import { Instrument } from './core/Instrument';
 import { AbstractTrack } from './core/Track';
 import { AudioTrack } from './core/AudioTrack';
 import { MusicPrism } from './instruments/MusicPrism';
-import { createInstrument } from './utils/instruments'; // Updated import path
+import { createInstrument } from './utils/instruments';
 
 const LICENSE =
   'MIT License\n\nCopyright (c) 2023, 2024 Hans-Martin Will\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.';
@@ -163,25 +163,51 @@ function MainApp() {
     }
   }
 
-  function appendTrack(trackType: string) {
+  async function appendTrack(trackType: string) {
     if (!project) return;
     let newTrack: AbstractTrack | null = null;
+    let instrument: Instrument | null = null;
+
+    console.log(`Attempting to append track of type: ${trackType}`);
+
     if (trackType === 'audio') {
       newTrack = new AudioTrack();
-    } else if (trackType === 'music-prism') {
-      const instrument = new MusicPrism();
-      newTrack = new InstrumentTrack('Music Prism', '#DA70D6', false, instrument);
+      console.log('Created new AudioTrack:', newTrack);
+    } else {
+      // All other track types are instrument tracks
+      instrument = createInstrument(trackType);
+      console.log(`Created instrument: ${instrument.name} for track type: ${trackType}`);
+      newTrack = new InstrumentTrack(instrument.name, COLORS[Math.floor(Math.random() * COLORS.length)], false, instrument);
+      console.log('Created new InstrumentTrack:', newTrack);
     }
 
     if (newTrack) {
+      // Initialize instrument if it's an instrument track
+      if (instrument) {
+        try {
+          console.log(`Initializing instrument: ${instrument.name}`);
+          await instrument.initialize(audioContext);
+          console.log(`Instrument ${instrument.name} initialized successfully.`);
+        } catch (initError) {
+          console.error(`Failed to initialize instrument ${instrument.name}:`, initError);
+          // If instrument initialization fails, we should not add the track.
+          return;
+        }
+      }
+
       project.appendTrack(newTrack);
+      console.log('Track appended to project:', newTrack);
 
       engine.handleTrackEvent({
         type: TrackEventType.Added,
         track: newTrack,
       });
+      console.log('Engine notified of new track.');
 
       setTracks([...project.tracks]);
+      console.log('Tracks state updated.');
+    } else {
+      console.warn(`No track created for type: ${trackType}`);
     }
   }
 

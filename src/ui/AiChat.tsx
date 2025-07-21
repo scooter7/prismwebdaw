@@ -44,6 +44,7 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
 
     try {
       if (mode === 'create') {
+        console.log("AiChat: Sending 'create' prompt to gemini-chat function.");
         const { data, error } = await supabase.functions.invoke('gemini-chat', {
           body: { prompt: currentInput },
         });
@@ -67,7 +68,7 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
             
             assistantContent = assistantContent.replace(midiRegex, '').trim();
           } catch (jsonError) {
-            console.error("Failed to parse MIDI JSON from AI response:", jsonError);
+            console.error("AiChat: Failed to parse MIDI JSON from AI response:", jsonError);
           }
         }
         
@@ -76,7 +77,8 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           newMessages[newMessages.length - 1].content = assistantContent;
           return newMessages;
         });
-      } else { // Learn mode with streaming
+      } else { // Learn mode with non-streaming for debugging
+        console.log("AiChat: Learn mode activated. Checking session.");
         if (!session) {
           setMessages(prev => {
             const newMessages = [...prev];
@@ -84,9 +86,11 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
             return newMessages;
           });
           setIsLoading(false);
+          console.log("AiChat: Session is null, returning.");
           return;
         }
 
+        console.log("AiChat: Session is active. Sending 'learn' prompt to gemini-rag-chat function.");
         const response = await fetch(`https://yezjxwahexsfbvhfxsji.supabase.co/functions/v1/gemini-rag-chat`, {
           method: 'POST',
           headers: {
@@ -96,11 +100,25 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           body: JSON.stringify({ prompt: currentInput }),
         });
 
+        console.log("AiChat: Response status from gemini-rag-chat:", response.status);
         if (!response.ok) {
           const errorData = await response.json();
+          console.error("AiChat: Error response from gemini-rag-chat:", errorData);
           throw new Error(errorData.error || 'Failed to fetch stream');
         }
 
+        // --- TEMPORARY: Handle non-streaming response ---
+        const data = await response.json();
+        console.log("AiChat: Received non-streaming data:", data);
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1].content = data.response;
+          return newMessages;
+        });
+        // --- END TEMPORARY CHANGE ---
+
+        /*
+        // Original streaming code (commented out for debugging)
         const reader = response.body!.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -110,34 +128,32 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
           if (done) break;
 
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
+          const lines = buffer.split('\n').filter(line => line.startsWith('data: '));
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const jsonString = line.substring(6);
-              try {
-                const parsed = JSON.parse(jsonString);
-                const text = parsed.candidates[0]?.content?.parts[0]?.text;
-                if (text) {
-                  setMessages(prev => {
-                    const newMessages = [...prev];
-                    const lastMessage = newMessages[newMessages.length - 1];
-                    if (lastMessage.role === 'assistant') {
-                      lastMessage.content += text;
-                    }
-                    return newMessages;
-                  });
-                }
-              } catch (e) {
-                console.warn("Failed to parse JSON chunk from stream:", e, "Chunk:", jsonString);
+            const jsonString = line.substring(6);
+            try {
+              const parsed = JSON.parse(jsonString);
+              const text = parsed.candidates[0]?.content?.parts[0]?.text;
+              if (text) {
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  const lastMessage = newMessages[newMessages.length - 1];
+                  if (lastMessage.role === 'assistant') {
+                    lastMessage.content += text;
+                  }
+                  return newMessages;
+                });
               }
+            } catch (e) {
+              console.warn("AiChat: Failed to parse JSON chunk from stream:", e, "Chunk:", jsonString);
             }
           }
         }
+        */
       }
     } catch (err: any) {
       const errorMessage = `Sorry, I encountered an error: ${err.message}`;
+      console.error("AiChat: Error in handleSubmit:", err);
       setMessages(prev => {
         const newMessages = [...prev];
         const lastMessage = newMessages[newMessages.length - 1];
@@ -150,6 +166,7 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
       });
     } finally {
       setIsLoading(false);
+      console.log("AiChat: Loading set to false.");
     }
   };
 
