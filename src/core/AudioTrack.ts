@@ -240,7 +240,8 @@ export class AudioTrack extends AbstractTrack {
         const truncatedSize = location.sub(previousRegion.position, signature);
         previousRegion.size = truncatedSize;
       }
-      this.regions[index - 1] = clone(previousRegion);
+      // Use shallow copy to avoid deep cloning AudioBuffer
+      this.regions[index - 1] = { ...previousRegion };
     }
 
     // Logic to ensure that the region is not overlapping with any other region
@@ -271,7 +272,8 @@ export class AudioTrack extends AbstractTrack {
           nextRegion.size = newNextSize;
           nextRegion.trim = newNextTrim;
 
-          this.regions[index + 1] = clone(nextRegion);
+          // Use shallow copy to avoid deep cloning AudioBuffer
+          this.regions[index + 1] = { ...nextRegion };
           break;
         } else {
           // The new region is the longer one. We remove the existing region and iterate.
@@ -288,14 +290,16 @@ export class AudioTrack extends AbstractTrack {
           region.size = truncatedSize;
         }
 
-        this.regions[index + 1] = clone(nextRegion);
+        // Use shallow copy to avoid deep cloning AudioBuffer
+        this.regions[index + 1] = { ...nextRegion };
         break;
       } else {
         break;
       }
     }
 
-    this.regions = clone(this.regions);
+    // Use shallow copy for the regions array
+    this.regions = [...this.regions];
   }
 
   static fromJson(file: JSONValue, resolver: AudioFileResolver): AudioTrack {
@@ -465,20 +469,6 @@ export class AudioTrack extends AbstractTrack {
       if (state.loopIteration !== loopIteration) {
         return;
       }
-
-      // const changeIntervalMin = Math.min(oldDiscontinuationTime, newDiscontinuationTime);
-      // const changeIntervalMax = Math.max(oldDiscontinuationTime, newDiscontinuationTime);
-
-      // if (state.activeUntil < changeIntervalMin + timeOffset) {
-      //   // The audio state is not affected by the discontinuation time change
-      //   return;
-      // }
-
-      // if (state.activeUntil > changeIntervalMax + timeOffset) {
-      //   // The audio state is not affected by the discontinuation time change
-      //   // Is this actually a valid case at all?
-      //   return;
-      // }
 
       const unclippedTime = state.unclippedTime;
 

@@ -27,7 +27,6 @@ import { Browser } from './Browser';
 import { EngineContext } from './Context';
 import { AudioFile } from '../core/AudioFile';
 import { AudioRegion } from '../core/AudioRegion';
-import { cloneDeep } from 'lodash';
 import { PianoRoll } from './PianoRoll';
 import { MidiRegion } from '../core/MidiRegion';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../components/ui/sheet';
@@ -240,31 +239,32 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
       track: props.project.tracks[trackIndex],
       region: region,
     });
-    props.setTracks(cloneDeep(props.project.tracks));
+    // Use shallow copy to update state
+    props.setTracks([...props.project.tracks]);
   }
 
+  // Shallow copy version to avoid deep cloning AudioBuffer
   const updateTracksImmutable = (trackIndex: number, regionIndex: number, newRegion: MidiRegion) => {
     const newTracks = props.tracks.map((track, tIdx) => {
       if (tIdx !== trackIndex) return track;
       const newRegions = track.regions.map((region, rIdx) => {
         return rIdx === regionIndex ? newRegion : region;
       });
-      const newTrack = cloneDeep(track);
-      newTrack.regions = newRegions;
-      return newTrack;
+      // Shallow copy the track and replace regions
+      return { ...track, regions: newRegions };
     });
     props.project.tracks = newTracks;
     props.setTracks(newTracks);
   };
 
   function handleMoveRegion(trackIndex: number, regionIndex: number, newPosition: Location) {
-    const region = cloneDeep(props.tracks[trackIndex].regions[regionIndex]);
+    const region = { ...props.tracks[trackIndex].regions[regionIndex] };
     region.position = newPosition;
     updateTracksImmutable(trackIndex, regionIndex, region as MidiRegion);
   }
 
   function handleResizeRegion(trackIndex: number, regionIndex: number, newLength: Duration) {
-    const region = cloneDeep(props.tracks[trackIndex].regions[regionIndex]);
+    const region = { ...props.tracks[trackIndex].regions[regionIndex] };
     region.length = newLength;
     updateTracksImmutable(trackIndex, regionIndex, region as MidiRegion);
   }
