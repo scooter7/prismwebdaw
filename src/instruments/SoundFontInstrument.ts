@@ -19,8 +19,9 @@ export class SoundFontInstrument implements Instrument {
       return;
     }
 
-    // Dynamically import WebAudioFontPlayer
-    const { default: WebAudioFontPlayer } = await import('webaudiofont');
+    // Dynamically import and use the named export WebAudioFontPlayer
+    const webaudiofont = await import('webaudiofont');
+    const WebAudioFontPlayer = webaudiofont.WebAudioFontPlayer;
     this.player = new WebAudioFontPlayer();
     console.log(`SoundFontInstrument: WebAudioFontPlayer initialized.`);
 
