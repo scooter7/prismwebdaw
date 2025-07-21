@@ -16,6 +16,17 @@ interface AiChatProps {
   onMidiPatternGenerated: (pattern: any) => Promise<void>;
 }
 
+// Utility to clean JSON: remove JS-style comments and trailing commas
+function cleanJsonString(jsonString: string): string {
+  // Remove JS-style comments
+  let cleaned = jsonString.replace(/\/\/.*$/gm, '');
+  // Remove trailing commas before } or ]
+  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+  // Remove any leading/trailing whitespace
+  cleaned = cleaned.trim();
+  return cleaned;
+}
+
 export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated }) => {
   const [mode, setMode] = useState<'create' | 'learn'>('create');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -57,7 +68,12 @@ export const AiChat: FunctionComponent<AiChatProps> = ({ onMidiPatternGenerated 
 
         if (midiMatch && midiMatch[1]) {
           try {
-            const cleanedJsonString = midiMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
+            // Clean the JSON string before parsing
+            const cleanedJsonString = cleanJsonString(
+              midiMatch[1]
+                .replace(/```json/g, '')
+                .replace(/```/g, '')
+            );
             const midiData = JSON.parse(cleanedJsonString);
             
             if (midiData.type === 'midi_patterns' && Array.isArray(midiData.patterns)) {
