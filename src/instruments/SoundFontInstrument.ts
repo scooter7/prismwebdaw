@@ -1,6 +1,8 @@
 import { Instrument } from '../core/Instrument';
-// Type-only import for the player class
 import type WebAudioFontPlayer from 'webaudiofont';
+
+// A global promise to ensure the script is only loaded once.
+let webaudiofontPromise: Promise<any> | null = null;
 
 export class SoundFontInstrument implements Instrument {
   private player: WebAudioFontPlayer | null = null;
@@ -14,6 +16,28 @@ export class SoundFontInstrument implements Instrument {
     this.instrumentId = instrumentId;
   }
 
+  private loadScript(): Promise<any> {
+    if (webaudiofontPromise) {
+      return webaudiofontPromise;
+    }
+    webaudiofontPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      // This path assumes the library is in node_modules and accessible via a public path.
+      // We point directly to the required file inside the package.
+      script.src = 'https://cdn.jsdelivr.net/npm/webaudiofont@2.9.0/dist/WebAudioFontPlayer.js';
+      script.onload = () => {
+        console.log('WebAudioFontPlayer script loaded successfully.');
+        resolve((window as any).WebAudioFontPlayer);
+      };
+      script.onerror = () => {
+        console.error('Failed to load WebAudioFontPlayer script.');
+        reject(new Error('Failed to load WebAudioFontPlayer script.'));
+      };
+      document.head.appendChild(script);
+    });
+    return webaudiofontPromise;
+  }
+
   async initialize(context: AudioContext): Promise<void> {
     console.log(`SoundFontInstrument: Initializing instrument '${this.name}' with ID '${this.instrumentId}'.`);
     if (this._isInitialized) {
@@ -21,32 +45,38 @@ export class SoundFontInstrument implements Instrument {
       return;
     }
 
-    // Use dynamic import to load the legacy module at runtime
-    const { default: Player } = await import('webaudiofont');
-    this.player = new Player();
-    console.log(`SoundFontInstrument: WebAudioFontPlayer initialized dynamically.`);
+    try {
+      const Player = await this.loadScript();
+      this.player = new Player();
+      console.log(`SoundFontInstrument: WebAudioFontPlayer initialized from global scope.`);
 
-    return new Promise((resolve, reject) => {
-      console.log(`SoundFontInstrument: Loading instrument data for '${this.name}'.`);
-      this.player!.loader.loadInstrument(
-        context,
-        this.instrumentId,
-        (buffer: AudioBuffer) => {
-          if (buffer) {
-            console.log(`SoundFontInstrument: Instrument '${this.name}' loaded successfully.`);
-            this._isInitialized = true;
-            resolve();
-          } else {
-            console.error(`SoundFontInstrument: Error loading instrument '${this.name}' with ID '${this.instrumentId}': Buffer is null.`);
-            reject(new Error(`Failed to load instrument: ${this.name}`));
+      return new Promise((resolve, reject) => {
+        console.log(`SoundFontInstrument: Loading instrument data for '${this.name}'.`);
+        this.player!.loader.loadInstrument(
+          context,
+          this.instrumentId,
+          (buffer: AudioBuffer) => {
+            if (buffer) {
+              console.log(`SoundFontInstrument: Instrument '${this.name}' loaded successfully.`);
+              this._isInitialized = true;
+              resolve();
+            } else {
+              const errorMsg = `Error loading instrument '${this.name}' with ID '${this.instrumentId}': Buffer is null.`;
+              console.error(errorMsg);
+              reject(new Error(errorMsg));
+            }
+          },
+          (error: any) => {
+            const errorMsg = `Error loading instrument '${this.name}' with ID '${this.instrumentId}':`;
+            console.error(errorMsg, error);
+            reject(new Error(`${errorMsg} ${error}`));
           }
-        },
-        (error: any) => {
-          console.error(`SoundFontInstrument: Error loading instrument '${this.name}' with ID '${this.instrumentId}':`, error);
-          reject(new Error(`Failed to load instrument: ${this.name}`));
-        }
-      );
-    });
+        );
+      });
+    } catch (error) {
+      console.error("Initialization failed:", error);
+      throw error;
+    }
   }
 
   connect(destination: AudioNode): void {
