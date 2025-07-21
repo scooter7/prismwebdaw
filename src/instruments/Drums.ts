@@ -6,9 +6,9 @@ type DrumSample = {
 };
 
 const DRUM_SAMPLES: Record<number, string> = {
-  36: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/electric/elec_kick.flac', // Kick
-  38: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/electric/elec_snare.flac', // Snare
-  42: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/electric/elec_hihat_closed.flac', // Closed Hi-hat
+  36: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/kick/bd_808.flac', // Kick
+  38: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/snare/drum_snare_hard.flac', // Snare
+  42: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/cymbal/drum_cymbal_closed.flac', // Closed Hi-hat
 };
 
 export class Drums implements Instrument {
