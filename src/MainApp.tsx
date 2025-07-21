@@ -506,7 +506,6 @@ function MainApp() {
                 Yes
               </Button>
             </DialogFooter>
-          </DialogFooter>
           </DialogContent>
         </Dialog>
 
