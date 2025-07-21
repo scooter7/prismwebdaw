@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+// @deno-types="npm:@types/pdf-parse@1.1.4"
+import pdf from "npm:pdf-parse@1.1.1";
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,12 +13,14 @@ const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`;
 const STREAMING_GEMINI_CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?key=${GEMINI_API_KEY}`;
 
+// Initialize Supabase client
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
 async function generateEmbedding(text: string) {
+  console.log("GENERATE-EMBEDDING-FOR-RAG: Generating embedding for text snippet.");
   const response = await fetch(GEMINI_EMBEDDING_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,6 +34,7 @@ async function generateEmbedding(text: string) {
     throw new Error(`Failed to generate embedding: ${errorBody}`);
   }
   const { embedding } = await response.json();
+  console.log("GENERATE-EMBEDDING-FOR-RAG: Embedding generated successfully.");
   return embedding.values;
 }
 
@@ -43,15 +49,28 @@ Context:
 `;
 
 serve(async (req) => {
+  console.log("GENERATE-EMBEDDING-FOR-RAG: Function invoked for chat.");
+
   if (req.method === 'OPTIONS') {
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Handling OPTIONS request.");
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt } = await req.json()
+    console.log(`GENERATE-EMBEDDING-FOR-RAG: Received prompt: "${prompt}"`);
+
     if (!prompt) throw new Error("Prompt is required");
+    if (!GEMINI_API_KEY) {
+      console.error("GENERATE-EMBEDDING-FOR-RAG: Error: Gemini API key is not set up.");
+      return new Response(JSON.stringify({ error: 'Gemini API key is not set up.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
 
     const queryEmbedding = await generateEmbedding(prompt);
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Query embedding generated.");
 
     const { data: documents, error: matchError } = await supabaseAdmin.rpc('match_music_theory_docs', {
       query_embedding: queryEmbedding,
@@ -59,10 +78,15 @@ serve(async (req) => {
       match_count: 5,
     });
 
-    if (matchError) throw matchError;
+    if (matchError) {
+      console.error("GENERATE-EMBEDDING-FOR-RAG: Error matching documents:", matchError);
+      throw matchError;
+    }
+    console.log(`GENERATE-EMBEDDING-FOR-RAG: Found ${documents.length} matching documents.`);
 
     const contextText = documents.map((doc: any) => doc.content).join('\n\n');
     const finalPrompt = SYSTEM_PROMPT_LEARN.replace('{CONTEXT}', contextText) + `\n\nUser's question: "${prompt}"`;
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Final prompt prepared.");
 
     const geminiStreamResponse = await fetch(STREAMING_GEMINI_CHAT_URL, {
       method: 'POST',
@@ -72,8 +96,10 @@ serve(async (req) => {
       })
     });
 
+    console.log(`GENERATE-EMBEDDING-FOR-RAG: Gemini streaming response status: ${geminiStreamResponse.status}`);
     if (!geminiStreamResponse.ok) {
       const errorBody = await geminiStreamResponse.text();
+      console.error("GENERATE-EMBEDDING-FOR-RAG: Gemini API Error:", errorBody);
       throw new Error(`Gemini API Error: ${errorBody}`);
     }
 
@@ -108,20 +134,21 @@ serve(async (req) => {
     };
 
     pump().catch(e => {
-      console.error("Error in stream pump:", e);
+      console.error("GENERATE-EMBEDDING-FOR-RAG: Error in stream pump:", e);
       writer.abort(e);
     });
 
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Streaming response back to client.");
     return new Response(readable, {
       headers: { ...corsHeaders, 'Content-Type': 'text/plain; charset=utf-8' },
       status: 200,
     });
 
   } catch (error) {
-    console.error('Error in gemini-rag-chat function:', error.message);
+    console.error('GENERATE-EMBEDDING-FOR-RAG: Top-level error caught in function:', error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
-    });
+    })
   }
-});
+})
