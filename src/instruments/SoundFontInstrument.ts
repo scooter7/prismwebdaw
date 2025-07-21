@@ -1,5 +1,5 @@
 import { Instrument } from '../core/Instrument';
-import { WebAudioFontPlayer } from 'webaudiofont';
+import * as WebAudioFont from 'webaudiofont'; // Changed to namespace import
 
 export class SoundFontInstrument implements Instrument {
   private player: any = null;
@@ -20,7 +20,8 @@ export class SoundFontInstrument implements Instrument {
       return;
     }
 
-    this.player = new WebAudioFontPlayer();
+    // Correctly instantiate WebAudioFontPlayer from the namespace import
+    this.player = new WebAudioFont.WebAudioFontPlayer();
     console.log(`SoundFontInstrument: WebAudioFontPlayer initialized.`);
 
     return new Promise((resolve, reject) => {
