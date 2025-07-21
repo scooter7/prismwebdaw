@@ -19,8 +19,12 @@ export class SoundFontInstrument implements Instrument {
       return;
     }
 
-    // Dynamically import and use the named export WebAudioFontPlayer
-    const { WebAudioFontPlayer } = await import('webaudiofont');
+    // Dynamically import and support both CJS and ESM
+    const mod = await import('webaudiofont');
+    const WebAudioFontPlayer = mod.WebAudioFontPlayer || (mod.default && mod.default.WebAudioFontPlayer);
+    if (!WebAudioFontPlayer) {
+      throw new Error('WebAudioFontPlayer is not available from webaudiofont module');
+    }
     this.player = new WebAudioFontPlayer();
     console.log(`SoundFontInstrument: WebAudioFontPlayer initialized.`);
 
