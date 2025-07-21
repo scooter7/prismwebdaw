@@ -25,5 +25,5 @@ declare module 'webaudiofont' {
       release?: number
     ): void;
   }
-  export = WebAudioFontPlayer;
+  export default WebAudioFontPlayer;
 }
