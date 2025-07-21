@@ -1,14 +1,8 @@
 import { Instrument } from '../core/Instrument';
-
-// Declare WebAudioFontPlayer globally for TypeScript
-declare global {
-  interface Window {
-    WebAudioFontPlayer: any;
-  }
-}
+import { WebAudioFontPlayer } from 'webaudiofont'; // Direct import
 
 export class SoundFontInstrument implements Instrument {
-  private player: any | null = null;
+  private player: WebAudioFontPlayer | null = null;
   public name: string;
   private instrumentId: string;
   private _isInitialized: boolean = false;
@@ -26,31 +20,13 @@ export class SoundFontInstrument implements Instrument {
       return; // Already initialized
     }
 
-    if (!window.WebAudioFontPlayer) {
-      console.log(`SoundFontInstrument: WebAudioFontPlayer script not found, loading it.`);
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        // Changed to a more reliable CDN for WebAudioFontPlayer
-        script.src = 'https://cdn.jsdelivr.net/npm/webaudiofont@latest/dist/webaudiofont.js';
-        script.onload = () => {
-          this.player = new window.WebAudioFontPlayer();
-          console.log(`SoundFontInstrument: WebAudioFontPlayer script loaded.`);
-          resolve();
-        };
-        script.onerror = (e) => {
-          console.error("SoundFontInstrument: Failed to load WebAudioFontPlayer script:", e);
-          reject(new Error("Failed to load WebAudioFontPlayer script."));
-        };
-        document.head.appendChild(script);
-      });
-    } else {
-      this.player = new window.WebAudioFontPlayer();
-      console.log(`SoundFontInstrument: WebAudioFontPlayer already available.`);
-    }
+    // Initialize the player directly from the imported class
+    this.player = new WebAudioFontPlayer();
+    console.log(`SoundFontInstrument: WebAudioFontPlayer initialized.`);
 
     return new Promise((resolve, reject) => {
       console.log(`SoundFontInstrument: Loading instrument data for '${this.name}'.`);
-      this.player.loader.loadInstrument(context, this.instrumentId, (buffer: AudioBuffer) => {
+      this.player!.loader.loadInstrument(context, this.instrumentId, (buffer: AudioBuffer) => {
         if (buffer) {
           console.log(`SoundFontInstrument: Instrument '${this.name}' loaded successfully.`);
           this._isInitialized = true;
