@@ -1,5 +1,6 @@
 import { Instrument } from '../core/Instrument';
-import WebAudioFontPlayer from 'webaudiofont';
+// Type-only import for the player class
+import type WebAudioFontPlayer from 'webaudiofont';
 
 export class SoundFontInstrument implements Instrument {
   private player: WebAudioFontPlayer | null = null;
@@ -20,8 +21,10 @@ export class SoundFontInstrument implements Instrument {
       return;
     }
 
-    this.player = new WebAudioFontPlayer();
-    console.log(`SoundFontInstrument: WebAudioFontPlayer initialized.`);
+    // Use dynamic import to load the legacy module at runtime
+    const { default: Player } = await import('webaudiofont');
+    this.player = new Player();
+    console.log(`SoundFontInstrument: WebAudioFontPlayer initialized dynamically.`);
 
     return new Promise((resolve, reject) => {
       console.log(`SoundFontInstrument: Loading instrument data for '${this.name}'.`);
