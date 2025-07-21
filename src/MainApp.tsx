@@ -55,7 +55,6 @@ import { MidiRegion } from './core/MidiRegion';
 import { Duration, Location } from './core/Common';
 import { MidiDataType, NoteMidiData } from './core/MidiData';
 import { COLORS } from './ui/Config';
-import { SoundFontInstrument } from './instruments/SoundFontInstrument';
 import { Instrument } from './core/Instrument';
 import { AbstractTrack } from './core/Track';
 import { AudioTrack } from './core/AudioTrack';
