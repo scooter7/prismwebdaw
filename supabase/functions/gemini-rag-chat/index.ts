@@ -49,7 +49,7 @@ Context:
 `;
 
 serve(async (req) => {
-  console.log("GENERATE-EMBEDDING-FOR-RAG: Function invoked for chat.");
+  console.log("GENERATE-EMBEDDING-FOR-RAG: Handler entered."); // New log here
 
   if (req.method === 'OPTIONS') {
     console.log("GENERATE-EMBEDDING-FOR-RAG: Handling OPTIONS request.");
@@ -57,6 +57,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Attempting to parse request body."); // New log here
     const { prompt } = await req.json()
     console.log(`GENERATE-EMBEDDING-FOR-RAG: Received prompt: "${prompt}"`);
 
@@ -69,9 +70,11 @@ serve(async (req) => {
       });
     }
 
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Calling generateEmbedding."); // New log here
     const queryEmbedding = await generateEmbedding(prompt);
     console.log("GENERATE-EMBEDDING-FOR-RAG: Query embedding generated.");
 
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Calling Supabase RPC for document matching."); // New log here
     const { data: documents, error: matchError } = await supabaseAdmin.rpc('match_music_theory_docs', {
       query_embedding: queryEmbedding,
       match_threshold: 0.7,
@@ -88,6 +91,7 @@ serve(async (req) => {
     const finalPrompt = SYSTEM_PROMPT_LEARN.replace('{CONTEXT}', contextText) + `\n\nUser's question: "${prompt}"`;
     console.log("GENERATE-EMBEDDING-FOR-RAG: Final prompt prepared.");
 
+    console.log("GENERATE-EMBEDDING-FOR-RAG: Calling Gemini streaming API."); // New log here
     const geminiStreamResponse = await fetch(STREAMING_GEMINI_CHAT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
