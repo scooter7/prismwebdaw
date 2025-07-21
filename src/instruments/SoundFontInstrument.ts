@@ -1,8 +1,8 @@
 import { Instrument } from '../core/Instrument';
-import * as WebAudioFont from 'webaudiofont'; // Changed to namespace import
+import WebAudioFontPlayer from 'webaudiofont'; // Changed to default import
 
 export class SoundFontInstrument implements Instrument {
-  private player: any = null;
+  private player: WebAudioFontPlayer | null = null;
   public name: string;
   private instrumentId: string;
   private _isInitialized: boolean = false;
@@ -20,13 +20,13 @@ export class SoundFontInstrument implements Instrument {
       return;
     }
 
-    // Correctly instantiate WebAudioFontPlayer from the namespace import
-    this.player = new WebAudioFont.WebAudioFontPlayer();
+    // Correctly instantiate WebAudioFontPlayer from the default import
+    this.player = new WebAudioFontPlayer();
     console.log(`SoundFontInstrument: WebAudioFontPlayer initialized.`);
 
     return new Promise((resolve, reject) => {
       console.log(`SoundFontInstrument: Loading instrument data for '${this.name}'.`);
-      this.player.loader.loadInstrument(
+      this.player!.loader.loadInstrument(
         context,
         this.instrumentId,
         (buffer: AudioBuffer) => {
