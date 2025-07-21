@@ -1,5 +1,5 @@
 declare module 'webaudiofont' {
-  export class WebAudioFontPlayer {
+  class WebAudioFontPlayer {
     constructor();
     loader: {
       loadInstrument(
@@ -8,7 +8,7 @@ declare module 'webaudiofont' {
         onloaded: (buffer: AudioBuffer) => void,
         onerror?: (error: any) => void
       ): void;
-      get(instrumentId: string): any; // This will return the loaded instrument data
+      get(instrumentId: string): any;
     };
     audioContext: AudioContext;
     queueWaveTable(
@@ -24,6 +24,6 @@ declare module 'webaudiofont' {
       attack?: number,
       release?: number
     ): void;
-    // Add other methods/properties you might use from WebAudioFontPlayer if needed
   }
+  export = WebAudioFontPlayer;
 }

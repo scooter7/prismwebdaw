@@ -1,5 +1,5 @@
 import { Instrument } from '../core/Instrument';
-import WebAudioFontPlayer from 'webaudiofont'; // Changed to default import
+import WebAudioFontPlayer from 'webaudiofont';
 
 export class SoundFontInstrument implements Instrument {
   private player: WebAudioFontPlayer | null = null;
@@ -20,7 +20,6 @@ export class SoundFontInstrument implements Instrument {
       return;
     }
 
-    // Correctly instantiate WebAudioFontPlayer from the default import
     this.player = new WebAudioFontPlayer();
     console.log(`SoundFontInstrument: WebAudioFontPlayer initialized.`);
 
