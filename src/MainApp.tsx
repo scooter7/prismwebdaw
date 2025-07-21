@@ -406,6 +406,16 @@ function MainApp() {
     const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
 
     const instrument = createInstrument(pattern.instrument || 'acoustic_grand_piano');
+    
+    // Await instrument initialization here
+    try {
+      await instrument.initialize(audioContext);
+    } catch (initError) {
+      console.error(`Failed to initialize instrument ${instrument.name}:`, initError);
+      // If instrument initialization fails, we should not add the track.
+      return;
+    }
+
     const newTrack = new InstrumentTrack(trackName, randomColor, false, instrument);
     newTrack.regions.push(region);
 

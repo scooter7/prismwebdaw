@@ -11,6 +11,7 @@ export class SoundFontInstrument implements Instrument {
   private player: any | null = null;
   public name: string;
   private instrumentId: string;
+  private _isInitialized: boolean = false;
 
   constructor(instrumentName: string, instrumentId: string) {
     this.name = instrumentName;
@@ -18,43 +19,49 @@ export class SoundFontInstrument implements Instrument {
   }
 
   async initialize(context: AudioContext): Promise<void> {
+    if (this._isInitialized) {
+      return; // Already initialized
+    }
+
     if (!window.WebAudioFontPlayer) {
-      // Dynamically load WebAudioFontPlayer if not already present
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement('script');
         script.src = 'https://surikov.github.io/webaudiofont/dist/webaudiofont.js';
         script.onload = () => {
           this.player = new window.WebAudioFontPlayer();
-          this.player.loader.decodeAfterLoading(context, this.player.loader.url);
           resolve();
         };
-        script.onerror = reject;
+        script.onerror = (e) => {
+          console.error("Failed to load WebAudioFontPlayer script:", e);
+          reject(new Error("Failed to load WebAudioFontPlayer script."));
+        };
         document.head.appendChild(script);
       });
     } else {
       this.player = new window.WebAudioFontPlayer();
-      this.player.loader.decodeAfterLoading(context, this.player.loader.url);
     }
 
     return new Promise((resolve, reject) => {
       this.player.loader.loadInstrument(context, this.instrumentId, (buffer: AudioBuffer) => {
         if (buffer) {
           console.log(`WebAudioFont instrument '${this.name}' loaded successfully.`);
+          this._isInitialized = true;
           resolve();
         } else {
           console.error(`Error loading WebAudioFont instrument '${this.name}' with ID '${this.instrumentId}'.`);
           reject(new Error(`Failed to load instrument: ${this.name}`));
         }
+      }, (error: any) => { // Add error callback for loadInstrument
+        console.error(`Error loading WebAudioFont instrument '${this.name}' with ID '${this.instrumentId}':`, error);
+        reject(new Error(`Failed to load instrument: ${this.name}`));
       });
     });
   }
 
   connect(destination: AudioNode): void {
     // WebAudioFontPlayer handles its own connections internally to the context's destination.
-    // We'll manage the output through a gain node if needed for track volume/pan.
-    // For now, we'll assume it connects directly to the context's destination.
-    // If we need to route through the track's channel strip, we'd need to modify WebAudioFontPlayer's output.
     // For simplicity, we'll let it connect to the main output for now.
+    // If we need to route through the track's channel strip, we'd need to modify WebAudioFontPlayer's output.
   }
 
   disconnect(): void {
@@ -63,13 +70,15 @@ export class SoundFontInstrument implements Instrument {
   }
 
   noteOn(note: number, velocity: number, time: number): void {
-    if (!this.player || !this.player.audioContext) return;
+    if (!this._isInitialized || !this.player || !this.player.audioContext) {
+      console.warn(`Attempted to play note on uninitialized instrument: ${this.name}`);
+      return;
+    }
     
-    // WebAudioFontPlayer uses 0-1 for velocity, and time is absolute audio context time
     this.player.queueWaveTable(
       this.player.audioContext,
       this.player.audioContext.destination, // Direct to destination for now
-      this.player.loader.get  (this.instrumentId),
+      this.player.loader.get(this.instrumentId),
       time,
       note,
       1, // Duration in seconds, can be adjusted if needed
@@ -88,6 +97,5 @@ export class SoundFontInstrument implements Instrument {
     // WebAudioFontPlayer doesn't have a direct "stop all" for all playing notes.
     // This would typically require tracking individual notes played and stopping them.
     // For now, we'll leave this as a no-op, or rely on the context being stopped.
-    // If a more robust stopAll is needed, we'd have to implement note tracking.
   }
 }
