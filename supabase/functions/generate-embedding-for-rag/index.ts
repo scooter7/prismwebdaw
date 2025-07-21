@@ -63,15 +63,24 @@ serve(async (req) => {
         fileContent = new TextDecoder().decode(fileBuffer);
     }
 
+    console.log(`Original file content length: ${fileContent.length}`);
+    console.log(`First 500 chars of original content: ${fileContent.substring(0, 500)}`);
+
     const cleanContent = fileContent.replace(/\s+/g, ' ').trim();
-    const chunks = cleanContent.split('\n\n').filter(chunk => chunk.trim().length > 20);
+    console.log(`Cleaned content length: ${cleanContent.length}`);
+    console.log(`First 500 chars of cleaned content: ${cleanContent.substring(0, 500)}`);
+
+    // Made chunking more lenient: split by single newline and require non-empty trim
+    const chunks = cleanContent.split('\n').filter(chunk => chunk.trim().length > 0);
 
     if (chunks.length === 0) {
-      console.log("No content chunks found in file.");
+      console.log("No content chunks found in file after lenient splitting.");
       return new Response(JSON.stringify({ message: 'No content to process' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log(`Found ${chunks.length} chunks.`);
 
     const { error: deleteError } = await supabaseAdmin
       .from('music_theory_docs')
