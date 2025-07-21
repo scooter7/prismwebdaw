@@ -32,8 +32,6 @@ import { MidiRegion } from '../core/MidiRegion';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../components/ui/sheet';
 import { Button } from '../components/ui/button';
 import { InstrumentTrack } from '../core/InstrumentTrack';
-import { MusicPrism } from '../instruments/MusicPrism';
-import { WamGui } from './WamGui';
 import { createInstrument } from '../utils/instruments';
 import { Plus } from 'lucide-react';
 import {
@@ -278,12 +276,9 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     }
   };
 
+  // Remove all Music Prism/WamGui logic
+  // Only show PianoRoll for instrument tracks
   const editorTrack = props.editingRegion ? props.tracks[props.editingRegion.trackIndex] : null;
-  const editorInstrument =
-    editorTrack && editorTrack.type === 'instrument'
-      ? (editorTrack as InstrumentTrack).instrument
-      : null;
-  const isWamEditor = editorInstrument instanceof MusicPrism;
 
   return (
     <div className="flex flex-col flex-grow overflow-hidden bg-background text-foreground">
@@ -395,22 +390,18 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
         </div>
         {props.editingRegion && (
           <div className={styles.editorPane}>
-            {isWamEditor ? (
-              <WamGui instrument={editorInstrument as MusicPrism} />
-            ) : (
-              <PianoRoll
-                region={
-                  props.project.tracks[props.editingRegion.trackIndex].regions[
-                    props.editingRegion.regionIndex
-                  ] as MidiRegion
-                }
-                timeSignature={props.project.timeSignature}
-                converter={props.project.locationToTime}
-                scale={timelineScale}
-                end={end}
-                onUpdateRegion={handleUpdateMidiRegion}
-              />
-            )}
+            <PianoRoll
+              region={
+                props.project.tracks[props.editingRegion.trackIndex].regions[
+                  props.editingRegion.regionIndex
+                ] as MidiRegion
+              }
+              timeSignature={props.project.timeSignature}
+              converter={props.project.locationToTime}
+              scale={timelineScale}
+              end={end}
+              onUpdateRegion={handleUpdateMidiRegion}
+            />
           </div>
         )}
       </div>

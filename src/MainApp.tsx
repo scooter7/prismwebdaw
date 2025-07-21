@@ -58,7 +58,6 @@ import { COLORS } from './ui/Config';
 import { Instrument } from './core/Instrument';
 import { AbstractTrack } from './core/Track';
 import { AudioTrack } from './core/AudioTrack';
-import { MusicPrism } from './instruments/MusicPrism';
 import { createInstrument } from './utils/instruments';
 
 const LICENSE =
@@ -277,7 +276,7 @@ function MainApp() {
 
     const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
 
-    const instrument = createInstrument(pattern.instrument || 'acoustic_grand_piano');
+    const instrument = createInstrument(pattern.instrument || 'analog');
     
     // Await instrument initialization here
     try {
@@ -305,8 +304,9 @@ function MainApp() {
     if (!project) return;
     const track = project.tracks[trackIndex];
     const region = track.regions[regionIndex];
+    // No Music Prism/WAM editor logic needed
+    // If you want to open a piano roll for instrument tracks, you can keep that logic here
     if (track.type === 'instrument' && region) {
-      // Toggle editor: if it's the same region, close it. Otherwise, open the new one.
       if (
         editingRegion &&
         editingRegion.trackIndex === trackIndex &&
