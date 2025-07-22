@@ -3,15 +3,10 @@ import { PPQN } from './Config';
 /**
  * The base URL for loading assets like audio files.
  */
-export const ASSET_BASE_URL = (() => {
-  const publicUrl = process.env.PUBLIC_URL;
-  if (publicUrl && publicUrl.startsWith('/')) {
-    // If PUBLIC_URL is a relative path, prepend the current origin
-    return window.location.origin + publicUrl;
-  }
-  // Otherwise, use it as is (it's either absolute or empty/undefined)
-  return publicUrl || 'https://ai-music.github.io/webdaw';
-})();
+export const ASSET_BASE_URL =
+  process.env.NODE_ENV === 'development'
+    ? window.location.origin
+    : 'https://ai-music.github.io/webdaw';
 
 /**
  * Common properties for things that have a name.
