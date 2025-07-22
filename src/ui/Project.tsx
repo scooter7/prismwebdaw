@@ -282,6 +282,16 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     props.setTracks([...props.project.tracks]); // Trigger re-render
   }
 
+  function handleDeleteRegion(trackIndex: number, regionIndex: number) {
+    const track = props.project.tracks[trackIndex];
+    if (track instanceof AudioTrack) {
+      track.deleteRegion(regionIndex);
+    } else if (track instanceof InstrumentTrack) {
+      track.deleteRegion(regionIndex);
+    }
+    props.setTracks([...props.project.tracks]); // Trigger re-render
+  }
+
   const handleUpdateMidiRegion = (updatedRegion: MidiRegion) => {
     if (props.editingRegion) {
       const { trackIndex, regionIndex } = props.editingRegion;
@@ -403,8 +413,9 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
             onMoveRegion={handleMoveRegion}
             onResizeRegion={handleResizeRegion}
             onRegionDoubleClick={props.onRegionDoubleClick}
-            onSplitRegion={handleSplitRegion} // Pass new prop
-            onDuplicateRegion={handleDuplicateRegion} // Pass new prop
+            onSplitRegion={handleSplitRegion}
+            onDuplicateRegion={handleDuplicateRegion}
+            onDeleteRegion={handleDeleteRegion} // Pass new prop
           />
         </div>
         {props.editingRegion && editorTrack instanceof InstrumentTrack && (

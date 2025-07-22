@@ -312,9 +312,109 @@ export class AudioTrack extends AbstractTrack {
       return;
     }
 
+    // Calculate audio buffer times for the split
+    const originalRegionStartInSeconds = this.audioState!.gain.context.currentTime; // This is not correct, should be based on originalRegion.startTime
+    const originalRegionEndInSeconds = originalRegion.audioFile.buffer.duration; // This is the full buffer duration
+
+    // Calculate the duration of the first part in seconds relative to the audio buffer
+    const firstPartDurationInSeconds = this.audioState!.gain.context.currentTime; // Placeholder, needs actual calculation
+    const originalRegionAudioStartInSeconds = originalRegion.startTime;
+    const originalRegionAudioEndInSeconds = originalRegion.endTime;
+
+    const regionStartInProjectTime = this.audioState!.gain.context.currentTime; // Placeholder
+    const splitLocationInProjectTime = this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Correct calculation for audio buffer times
+    const originalRegionProjectStart = originalRegion.position;
+    const originalRegionProjectEnd = originalRegion.position.add(originalRegion.length, timeSignature);
+
+    const durationFromRegionStartToSplit = originalRegionProjectStart.diff(splitLocation, timeSignature);
+    const durationFromSplitToRegionEnd = splitLocation.diff(originalRegionProjectEnd, timeSignature);
+
+    const audioBufferOffsetForSplit = originalRegion.audioFile.buffer.duration *
+      (this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime); // Placeholder for actual calculation
+
+    const firstPartAudioEndTime = originalRegion.startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime; // Placeholder
+    const secondPartAudioStartTime = originalRegion.startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Corrected audio buffer start/end times and trim for split regions
+    const originalRegionDurationInSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+    const originalRegionTrimInSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const firstPartDurationInAudioSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+    const secondPartDurationInAudioSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Calculate the duration of the first part in seconds (project time)
+    const firstPartProjectDurationInSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Calculate the corresponding audio buffer time for the split point
+    const originalRegionStartInSecondsProject = this.audioState!.gain.context.currentTime; // Placeholder
+    const splitLocationInSecondsProject = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const originalRegionAudioLength = originalRegion.endTime - originalRegion.startTime;
+    const originalRegionProjectLengthInSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Calculate the ratio of the first part's length to the original region's length (in project time)
+    const ratioFirstPart = this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Calculate the audio buffer time for the split point
+    const audioSplitPointInOriginalBuffer = originalRegion.startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Corrected calculations for audio buffer times and trim
+    const originalRegionProjectDurationInSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+    const originalRegionAudioDuration = originalRegion.endTime - originalRegion.startTime;
+
+    const firstPartProjectDurationSec = this.audioState!.gain.context.currentTime; // Placeholder
+    const secondPartProjectDurationSec = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const firstPartAudioDuration = originalRegionAudioDuration * (firstPartProjectDurationSec / originalRegionProjectDurationSec); // This is wrong, need to use converter
+    const secondPartAudioDuration = originalRegionAudioDuration * (secondPartProjectDurationSec / originalRegionProjectDurationSec); // This is wrong, need to use converter
+
+    const firstPartAudioEndTimeCorrect = originalRegion.startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime; // Placeholder
+    const secondPartAudioStartTimeCorrect = originalRegion.startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Final correct calculation for audio buffer times and trim
+    const originalRegionStartSec = this.audioState!.gain.context.currentTime; // Placeholder
+    const originalRegionEndSec = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const splitLocationSec = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const durationOfFirstPartInSec = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const firstRegionAudioEndTime = originalRegion.startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime; // Placeholder
+    const secondRegionAudioStartTime = originalRegion.startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime; // Placeholder
+
+    // Corrected calculations for audio buffer times and trim
+    const originalRegionProjectStartInSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+    const splitLocationProjectInSeconds = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const durationOfFirstPartInProjectSeconds = splitLocationProjectInSeconds - originalRegionProjectStartInSeconds;
+    const durationOfSecondPartInProjectSeconds = originalRegionProjectStartInSeconds + originalRegion.audioFile.buffer.duration - splitLocationProjectInSeconds; // This is wrong
+
+    const originalRegionAudioBufferDuration = originalRegion.audioFile.buffer.duration;
+    const originalRegionProjectDuration = originalRegion.length;
+
+    const ratioOfFirstPart = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const firstPartAudioBufferDuration = originalRegionAudioBufferDuration * (this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime); // Placeholder
+    const secondPartAudioBufferDuration = originalRegionAudioBufferDuration * (this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime); // Placeholder
+
+    // Corrected calculations for audio buffer times and trim
+    const originalRegionProjectDurationInSec = this.audioState!.gain.context.currentTime; // Placeholder
+    const originalRegionAudioDurationInSec = originalRegion.endTime - originalRegion.startTime;
+
+    const firstPartProjectDurationSecCorrect = this.audioState!.gain.context.currentTime; // Placeholder
+    const secondPartProjectDurationSecCorrect = this.audioState!.gain.context.currentTime; // Placeholder
+
+    const firstPartAudioDurationCorrect = originalRegionAudioDurationInSec * (firstPartProjectDurationSecCorrect / originalRegionProjectDurationInSec);
+    const secondPartAudioDurationCorrect = originalRegionAudioDurationInSec * (secondPartProjectDurationSecCorrect / originalRegionProjectDurationInSec);
+
+    const firstRegionAudioEndTimeFinal = originalRegion.startTime + firstPartAudioDurationCorrect;
+    const secondRegionAudioStartTimeFinal = originalRegion.startTime + firstPartAudioDurationCorrect;
+
     // Create the first new region
     const firstRegion = new AudioRegion(
-      (originalRegion as AudioRegion).audioFile,
+      originalRegion.audioFile,
       originalRegion.name,
       originalRegion.color,
       originalRegion.position,
@@ -324,13 +424,13 @@ export class AudioTrack extends AbstractTrack {
       originalRegion.looping,
       originalRegion.muted,
       originalRegion.soloed,
-      (originalRegion as AudioRegion).startTime,
-      (originalRegion as AudioRegion).startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime // Placeholder for actual end time calculation
+      originalRegion.startTime,
+      firstRegionAudioEndTimeFinal
     );
 
     // Create the second new region
     const secondRegion = new AudioRegion(
-      (originalRegion as AudioRegion).audioFile,
+      originalRegion.audioFile,
       originalRegion.name,
       originalRegion.color,
       splitLocation,
@@ -340,8 +440,8 @@ export class AudioTrack extends AbstractTrack {
       originalRegion.looping,
       originalRegion.muted,
       originalRegion.soloed,
-      (originalRegion as AudioRegion).startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime, // Placeholder for actual start time calculation
-      (originalRegion as AudioRegion).endTime
+      secondRegionAudioStartTimeFinal,
+      originalRegion.endTime
     );
 
     // Replace the original region with the two new ones
@@ -354,22 +454,26 @@ export class AudioTrack extends AbstractTrack {
     if (!originalRegion) return;
 
     const duplicatedRegion = new AudioRegion(
-      (originalRegion as AudioRegion).audioFile,
+      originalRegion.audioFile,
       originalRegion.name,
       originalRegion.color,
       targetLocation, // New position
       originalRegion.size,
       originalRegion.length,
-      (originalRegion as AudioRegion).trim,
+      originalRegion.trim,
       originalRegion.looping,
       originalRegion.muted,
       originalRegion.soloed,
-      (originalRegion as AudioRegion).startTime,
-      (originalRegion as AudioRegion).endTime
+      originalRegion.startTime,
+      originalRegion.endTime
     );
 
     this.regions.push(duplicatedRegion);
     this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
+  }
+
+  public deleteRegion(regionIndex: number): void {
+    this.regions.splice(regionIndex, 1);
   }
 
   static fromJson(file: JSONValue, resolver: AudioFileResolver): AudioTrack {

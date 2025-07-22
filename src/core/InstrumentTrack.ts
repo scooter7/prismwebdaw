@@ -1,6 +1,6 @@
 import { AudioEffect } from './AudioEffect';
 import { AudioFileResolver } from './AudioFile';
-import { JSONObject, JSONValue, Location, LocationToTime, assert } from './Common';
+import { JSONObject, JSONValue, Location, LocationToTime, assert, Duration, TimeSignature } from './Common';
 import { Instrument } from './Instrument';
 import { MidiDataType, NoteMidiData } from './MidiData';
 import { MidiEffect } from './MidiEffect';
@@ -196,24 +196,12 @@ export class InstrumentTrack extends AbstractTrack {
 
     // Filter MIDI data for the first part
     const firstPartMidiData = originalRegion.midiData.filter(midiEvent => {
-      if (midiEvent.type === MidiDataType.Note) {
-        const noteEnd = midiEvent.start.add(midiEvent.duration, timeSignature);
-        return midiEvent.start.compare(splitLocation) < 0; // Note starts before split
-      }
       return midiEvent.start.compare(splitLocation) < 0;
     });
 
-    // Filter MIDI data for the second part and adjust their start times
+    // Filter MIDI data for the second part
     const secondPartMidiData = originalRegion.midiData.filter(midiEvent => {
-      if (midiEvent.type === MidiDataType.Note) {
-        const noteEnd = midiEvent.start.add(midiEvent.duration, timeSignature);
-        return noteEnd.compare(splitLocation) > 0; // Note ends after split
-      }
       return midiEvent.start.compare(splitLocation) >= 0;
-    }).map(midiEvent => {
-      // Adjust start time relative to the new region's start
-      const newStart = splitLocation.diff(midiEvent.start, timeSignature);
-      return { ...midiEvent, start: newStart };
     });
 
     // Create the first new region
@@ -241,7 +229,7 @@ export class InstrumentTrack extends AbstractTrack {
       originalRegion.looping,
       originalRegion.muted,
       originalRegion.soloed,
-      originalRegion.startLocation.add(firstPartDuration, timeSignature) // Adjust startLocation for second part
+      originalRegion.startLocation // startLocation remains the same as it's an absolute reference
     );
 
     // Replace the original region with the two new ones
@@ -268,6 +256,10 @@ export class InstrumentTrack extends AbstractTrack {
 
     this.regions.push(duplicatedRegion);
     this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
+  }
+
+  public deleteRegion(regionIndex: number): void {
+    this.regions.splice(regionIndex, 1);
   }
 
   // Playback support

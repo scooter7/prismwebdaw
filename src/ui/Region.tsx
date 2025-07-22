@@ -30,6 +30,7 @@ export interface RegionProps {
   onDoubleClick: (trackIndex: number, regionIndex: number) => void;
   onSplit: (trackIndex: number, regionIndex: number, splitLocation: Location) => void;
   onDuplicate: (trackIndex: number, regionIndex: number, targetLocation: Location) => void;
+  onDelete: (trackIndex: number, regionIndex: number) => void; // New prop for deleting regions
   timeSignature: TimeSignature;
   end: Location;
   currentPlaybackLocation: Location; // Added to determine split point
@@ -303,6 +304,10 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
     props.onDuplicate(props.trackIndex, props.regionIndex, targetLocation);
   };
 
+  const handleDelete = () => {
+    props.onDelete(props.trackIndex, props.regionIndex);
+  };
+
   const regionStartTime = props.converter.convertLocation(props.region.position);
   const regionEndTime = props.converter.convertLocation(props.region.position.add(props.region.length, props.timeSignature));
   const currentPlaybackTime = props.converter.convertLocation(props.currentPlaybackLocation);
@@ -383,6 +388,9 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDuplicate}>
           Duplicate Region
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDelete}>
+          Delete Region
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
