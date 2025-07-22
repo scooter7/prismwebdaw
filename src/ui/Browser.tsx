@@ -12,7 +12,6 @@ import {
   Duration,
   Location,
   LocationToTime,
-  PUBLIC_PATH,
   TimeSignature,
   ASSET_BASE_URL,
 } from '../core/Common';
@@ -176,7 +175,7 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
         nodeData: null,
       };
     } else {
-      const nodeId = new URL(`${PUBLIC_PATH}/${json.path}`, ASSET_BASE_URL).toString();
+      const nodeId = new URL(json.path, ASSET_BASE_URL).toString();
       return {
         id: nodeId,
         label: json.name,
@@ -188,7 +187,7 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
   }
 
   useEffect(() => {
-    const urlString = `${PUBLIC_PATH}/${LIBRARY_JSON}`;
+    const urlString = new URL(LIBRARY_JSON, ASSET_BASE_URL).toString();
     fetch(urlString).then((response) => {
       if (response.ok) {
         response.json().then((json) => {

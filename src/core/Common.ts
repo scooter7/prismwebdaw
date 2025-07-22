@@ -1,11 +1,6 @@
 import { PPQN } from './Config';
 
 /**
- * The root of the data folder server up by the application.
- */
-export const PUBLIC_PATH = process.env.PUBLIC_URL || '';
-
-/**
  * The base URL for loading assets like audio files.
  */
 export const ASSET_BASE_URL = 'https://ai-music.github.io/webdaw';
@@ -407,46 +402,6 @@ export class Location {
   public toJson(): JSONValue {
     return [this.bar, this.beat, this.tick];
   }
-}
-
-/**
- * Conversion functions between locations and time values.
- */
-export interface LocationToTime {
-  /**
-   * Convert an arrangement location to a time value.
-   *
-   * @param location  the location to convert
-   * @returns         the time value measued in seconds from the start of the arrangement
-   */
-  convertLocation: (location: Location) => number;
-
-  /**
-   * Convert a time value to an arrangement location.
-   *
-   * @param time      the time value to convert
-   * @returns         the location within the arrangement
-   */
-  convertTime: (time: number) => Location;
-
-  /**
-   * Convert a duration starting at a given location within the arrangement to a time value.
-   * @param duration  the duration to convert
-   * @param location  the location at which the duration starts
-   * @returns         the time value measued in seconds
-   */
-  convertDurationAtLocation: (duration: Duration, location: Location) => number;
-
-  /**
-   * Retrieve the time signature at a given location within the arrangement.
-   *
-   * TIme signatures can change only at the beginning of a bar, therefore, it is
-   * primarily the bar number that is used to determine the time signature.
-   *
-   * @param location the location within the arrangement
-   * @returns
-   */
-  timeSignatureAtLocation: (location: Location) => TimeSignature;
 }
 
 /**

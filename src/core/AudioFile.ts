@@ -3,7 +3,6 @@ import {
   JSONObject,
   JSONValue,
   NamedObject,
-  PUBLIC_PATH,
   ToJson,
   createId,
   ASSET_BASE_URL,
@@ -125,7 +124,7 @@ export class AudioFile implements NamedObject, Identifiable, ToJson {
 
     const obj = file as JSONObject;
     const name = obj['name'] as string;
-    const urlString = `${PUBLIC_PATH}/${obj['url'] as string}`;
+    const urlString = obj['url'] as string; // obj['url'] is already a relative path like 'library/samples/...'
     console.log(`Loading audio file ${name} from ${urlString}`);
     const url = new URL(urlString, ASSET_BASE_URL);
 
