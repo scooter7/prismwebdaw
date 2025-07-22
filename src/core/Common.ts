@@ -405,6 +405,40 @@ export class Location {
 }
 
 /**
+ * Converts a location within the arrangement to a time in seconds, and vice versa.
+ */
+export interface LocationToTime {
+  /**
+   * Converts a location within the arrangement to a time in seconds.
+   * @param location The location to convert.
+   * @returns The time in seconds.
+   */
+  convertLocation: (location: Location) => number;
+
+  /**
+   * Converts a time in seconds to a location within the arrangement.
+   * @param time The time in seconds to convert.
+   * @returns The location.
+   */
+  convertTime: (time: number) => Location;
+
+  /**
+   * Converts a duration at a given location to a time in seconds.
+   * @param duration The duration to convert.
+   * @param location The location at which the duration starts.
+   * @returns The time in seconds.
+   */
+  convertDurationAtLocation: (duration: Duration, location: Location) => number;
+
+  /**
+   * Returns the time signature at a given location.
+   * @param location The location to get the time signature for.
+   * @returns The time signature.
+   */
+  timeSignatureAtLocation: (location: Location) => TimeSignature;
+}
+
+/**
  * Assertion function that throws an error if the given condition is false.
  *
  * @param condition   the condition to check

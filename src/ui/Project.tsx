@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Transport } from './Transport';
 import { Mixer } from './Mixer';
-import { Duration, Location, Location as LocationValue } from '../core/Common';
+import { Duration, Location, Location as LocationValue, LocationToTime } from '../core/Common';
 import { Project as ProjectObj } from '../core/Project';
 import {
   PlaybackPositionEvent,
@@ -262,22 +262,22 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     props.setTracks([...props.project.tracks]); // Trigger re-render
   }
 
-  function handleSplitRegion(trackIndex: number, regionIndex: number, splitLocation: Location) {
+  function handleSplitRegion(trackIndex: number, regionIndex: number, splitLocation: Location, converter: LocationToTime) {
     const track = props.project.tracks[trackIndex];
     if (track instanceof AudioTrack) {
-      track.splitRegion(regionIndex, splitLocation, props.project.timeSignature);
+      track.splitRegion(regionIndex, splitLocation, props.project.timeSignature, converter);
     } else if (track instanceof InstrumentTrack) {
-      track.splitRegion(regionIndex, splitLocation, props.project.timeSignature);
+      track.splitRegion(regionIndex, splitLocation, props.project.timeSignature, converter);
     }
     props.setTracks([...props.project.tracks]); // Trigger re-render
   }
 
-  function handleDuplicateRegion(trackIndex: number, regionIndex: number, targetLocation: Location) {
+  function handleDuplicateRegion(trackIndex: number, regionIndex: number, targetLocation: Location, converter: LocationToTime) {
     const track = props.project.tracks[trackIndex];
     if (track instanceof AudioTrack) {
-      track.duplicateRegion(regionIndex, targetLocation, props.project.timeSignature);
+      track.duplicateRegion(regionIndex, targetLocation, props.project.timeSignature, converter);
     } else if (track instanceof InstrumentTrack) {
-      track.duplicateRegion(regionIndex, targetLocation, props.project.timeSignature);
+      track.duplicateRegion(regionIndex, targetLocation, props.project.timeSignature, converter);
     }
     props.setTracks([...props.project.tracks]); // Trigger re-render
   }

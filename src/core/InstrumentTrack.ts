@@ -177,7 +177,7 @@ export class InstrumentTrack extends AbstractTrack {
     AbstractTrack.registerFactory(InstrumentTrack.TYPE_TAG, InstrumentTrack.fromJson);
   }
 
-  public splitRegion(regionIndex: number, splitLocation: Location, timeSignature: TimeSignature): void {
+  public splitRegion(regionIndex: number, splitLocation: Location, timeSignature: TimeSignature, converter: LocationToTime): void {
     const originalRegion = this.regions[regionIndex];
     if (!originalRegion) return;
 
@@ -237,7 +237,7 @@ export class InstrumentTrack extends AbstractTrack {
     this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
   }
 
-  public duplicateRegion(regionIndex: number, targetLocation: Location, timeSignature: TimeSignature): void {
+  public duplicateRegion(regionIndex: number, targetLocation: Location, timeSignature: TimeSignature, converter: LocationToTime): void {
     const originalRegion = this.regions[regionIndex];
     if (!originalRegion) return;
 

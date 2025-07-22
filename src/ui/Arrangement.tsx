@@ -16,7 +16,7 @@ import {
   TRACK_HEIGHT_PX,
 } from './Config';
 import { Button } from '../components/ui/button';
-import { Duration, Location } from '../core/Common';
+import { Duration, Location, LocationToTime } from '../core/Common';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,8 +38,8 @@ export interface ArrangementProps extends TimelineProps {
   onMoveRegion: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
   onResizeRegion: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
   onRegionDoubleClick: (trackIndex: number, regionIndex: number) => void;
-  onSplitRegion: (trackIndex: number, regionIndex: number, splitLocation: Location) => void;
-  onDuplicateRegion: (trackIndex: number, regionIndex: number, targetLocation: Location) => void;
+  onSplitRegion: (trackIndex: number, regionIndex: number, splitLocation: Location, converter: LocationToTime) => void;
+  onDuplicateRegion: (trackIndex: number, regionIndex: number, targetLocation: Location, converter: LocationToTime) => void;
   onDeleteRegion: (trackIndex: number, regionIndex: number) => void; // New prop for deleting regions
 }
 
