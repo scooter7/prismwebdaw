@@ -28,8 +28,8 @@ export interface RegionProps {
   onMove: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
   onResize: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
   onDoubleClick: (trackIndex: number, regionIndex: number) => void;
-  onSplit: (trackIndex: number, regionIndex: number, splitLocation: Location) => void;
-  onDuplicate: (trackIndex: number, regionIndex: number, targetLocation: Location) => void;
+  onSplit: (trackIndex: number, regionIndex: number, splitLocation: Location, converter: LocationToTime) => void;
+  onDuplicate: (trackIndex: number, regionIndex: number, targetLocation: Location, converter: LocationToTime) => void;
   onDelete: (trackIndex: number, regionIndex: number) => void; // New prop for deleting regions
   timeSignature: TimeSignature;
   end: Location;
@@ -292,7 +292,7 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
 
     // Check if playback head is within the region
     if (currentPlaybackTime > regionStartTime && currentPlaybackTime < regionEndTime) {
-      props.onSplit(props.trackIndex, props.regionIndex, props.currentPlaybackLocation);
+      props.onSplit(props.trackIndex, props.regionIndex, props.currentPlaybackLocation, props.converter);
     } else {
       // Optionally, provide feedback to the user that split is only at playback head
       console.warn("Cannot split: Playback head is not within the region.");
@@ -301,7 +301,7 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
 
   const handleDuplicate = () => {
     const targetLocation = props.region.position.add(props.region.length, props.timeSignature);
-    props.onDuplicate(props.trackIndex, props.regionIndex, targetLocation);
+    props.onDuplicate(props.trackIndex, props.regionIndex, targetLocation, props.converter);
   };
 
   const handleDelete = () => {
