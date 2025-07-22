@@ -3,7 +3,7 @@ import { PPQN } from './Config';
 /**
  * The base URL for loading assets like audio files.
  */
-export const ASSET_BASE_URL = 'https://ai-music.github.io/webdaw';
+export const ASSET_BASE_URL = process.env.PUBLIC_URL || 'https://ai-music.github.io/webdaw';
 
 /**
  * Common properties for things that have a name.
