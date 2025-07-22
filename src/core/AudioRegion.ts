@@ -1,5 +1,5 @@
 import { AudioFile, AudioFileResolver } from './AudioFile';
-import { Duration, JSONObject, JSONValue, Location, ASSET_BASE_URL } from './Common';
+import { Duration, JSONObject, JSONValue, Location } from './Common';
 import { AbstractRegion, AudioRegionData, RegionDataType } from './Region';
 
 export class AudioRegion extends AbstractRegion {
@@ -37,7 +37,7 @@ export class AudioRegion extends AbstractRegion {
     const looping = obj['looping'] as boolean;
 
     const urlString = obj['audioFile'] as string;
-    const audioFile = resolver.resolve(new URL(urlString, ASSET_BASE_URL));
+    const audioFile = resolver.resolve(new URL(urlString, document.baseURI));
     const startTime = obj['startTime'] as number;
     const endTime = obj['endTime'] as number;
     const position = Location.fromJson(obj['position']);

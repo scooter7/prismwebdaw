@@ -1,7 +1,6 @@
 // This file contains controller functions associated with the "Project" menu
 
 import { AudioFileManager } from '../core/AudioFileManager';
-import { ASSET_BASE_URL } from '../core/Common';
 import { Project } from '../core/Project';
 
 /**
@@ -10,7 +9,7 @@ import { Project } from '../core/Project';
 export function createProject(afm: AudioFileManager, callback: (project: Project) => void) {
   /* ... */
   console.log('Creating a new project.');
-  const urlString = new URL('templates/default-project.json', ASSET_BASE_URL).toString();
+  const urlString = new URL('templates/default-project.json', document.baseURI).toString();
   console.log(`Creating a new project using template ${urlString}.`);
 
   fetch(urlString, {

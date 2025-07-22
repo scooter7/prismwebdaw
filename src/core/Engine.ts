@@ -1,5 +1,5 @@
 import { AudioFile } from './AudioFile';
-import { ASSET_BASE_URL, Duration, Location } from './Common';
+import { Duration, Location } from './Common';
 import {
   PlaybackEvent,
   PlaybackEventHandler,
@@ -176,7 +176,7 @@ export class Engine {
 
   // The metronome sound generator
   private _metronome: Metronome = new Metronome(
-    AudioFile.create(new URL(DEFAULT_METRONOME_AUDIO_FILE, ASSET_BASE_URL)),
+    AudioFile.create(new URL(DEFAULT_METRONOME_AUDIO_FILE, document.baseURI)),
   );
 
   /**
@@ -697,7 +697,8 @@ export class Engine {
    * @param handler The handler to unregister.
    */
   public unregisterPlaybackEventHandler(handler: PlaybackEventHandler): void {
-    this.playbackEventHandlers = this.playbackEventHandlers.filter((h) => h !== handler);
+    this.playbackEventHandlers = this.playbackEventHandlers.filter((h) => h !== handler,
+    );
   }
 
   /**

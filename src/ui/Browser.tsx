@@ -13,7 +13,6 @@ import {
   Location,
   LocationToTime,
   TimeSignature,
-  ASSET_BASE_URL,
 } from '../core/Common';
 import {
   CLICK_TO_DRAG_TIMEOUT_MS,
@@ -175,7 +174,7 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
         nodeData: null,
       };
     } else {
-      const nodeId = new URL(json.path, ASSET_BASE_URL).toString();
+      const nodeId = new URL(json.path, document.baseURI).toString();
       return {
         id: nodeId,
         label: json.name,
@@ -187,7 +186,7 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
   }
 
   useEffect(() => {
-    const urlString = new URL(LIBRARY_JSON, ASSET_BASE_URL).toString();
+    const urlString = new URL(LIBRARY_JSON, document.baseURI).toString();
     fetch(urlString).then((response) => {
       if (response.ok) {
         response.json().then((json) => {
