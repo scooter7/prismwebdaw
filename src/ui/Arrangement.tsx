@@ -38,6 +38,8 @@ export interface ArrangementProps extends TimelineProps {
   onMoveRegion: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
   onResizeRegion: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
   onRegionDoubleClick: (trackIndex: number, regionIndex: number) => void;
+  onSplitRegion: (trackIndex: number, regionIndex: number, splitLocation: Location) => void; // New prop
+  onDuplicateRegion: (trackIndex: number, regionIndex: number, targetLocation: Location) => void; // New prop
 }
 
 /**
@@ -294,8 +296,11 @@ export const Arrangement: FunctionComponent<ArrangementProps> = (props: Arrangem
                   onMove={props.onMoveRegion}
                   onResize={props.onResizeRegion}
                   onDoubleClick={props.onRegionDoubleClick}
+                  onSplit={props.onSplitRegion} // Pass new prop
+                  onDuplicate={props.onDuplicateRegion} // Pass new prop
                   timeSignature={props.timeSignature}
                   end={props.end}
+                  currentPlaybackLocation={props.current} // Pass current playback location
                 />
               )),
             )}

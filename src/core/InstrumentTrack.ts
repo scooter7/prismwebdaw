@@ -177,6 +177,99 @@ export class InstrumentTrack extends AbstractTrack {
     AbstractTrack.registerFactory(InstrumentTrack.TYPE_TAG, InstrumentTrack.fromJson);
   }
 
+  public splitRegion(regionIndex: number, splitLocation: Location, timeSignature: TimeSignature): void {
+    const originalRegion = this.regions[regionIndex];
+    if (!originalRegion) return;
+
+    // Calculate the duration of the first part
+    const firstPartDuration = originalRegion.position.diff(splitLocation, timeSignature);
+
+    // Calculate the duration of the second part
+    const originalRegionEnd = originalRegion.position.add(originalRegion.length, timeSignature);
+    const secondPartDuration = splitLocation.diff(originalRegionEnd, timeSignature);
+
+    // Ensure split point is valid (within the region and not at its start/end)
+    if (firstPartDuration.compare(new Duration(0,0,0)) <= 0 || secondPartDuration.compare(new Duration(0,0,0)) <= 0) {
+      console.warn("Split location is at or outside region boundaries. No split performed.");
+      return;
+    }
+
+    // Filter MIDI data for the first part
+    const firstPartMidiData = originalRegion.midiData.filter(midiEvent => {
+      if (midiEvent.type === MidiDataType.Note) {
+        const noteEnd = midiEvent.start.add(midiEvent.duration, timeSignature);
+        return midiEvent.start.compare(splitLocation) < 0; // Note starts before split
+      }
+      return midiEvent.start.compare(splitLocation) < 0;
+    });
+
+    // Filter MIDI data for the second part and adjust their start times
+    const secondPartMidiData = originalRegion.midiData.filter(midiEvent => {
+      if (midiEvent.type === MidiDataType.Note) {
+        const noteEnd = midiEvent.start.add(midiEvent.duration, timeSignature);
+        return noteEnd.compare(splitLocation) > 0; // Note ends after split
+      }
+      return midiEvent.start.compare(splitLocation) >= 0;
+    }).map(midiEvent => {
+      // Adjust start time relative to the new region's start
+      const newStart = splitLocation.diff(midiEvent.start, timeSignature);
+      return { ...midiEvent, start: newStart };
+    });
+
+    // Create the first new region
+    const firstRegion = new MidiRegion(
+      firstPartMidiData,
+      originalRegion.name,
+      originalRegion.color,
+      originalRegion.position,
+      firstPartDuration,
+      firstPartDuration,
+      originalRegion.looping,
+      originalRegion.muted,
+      originalRegion.soloed,
+      originalRegion.startLocation
+    );
+
+    // Create the second new region
+    const secondRegion = new MidiRegion(
+      secondPartMidiData,
+      originalRegion.name,
+      originalRegion.color,
+      splitLocation, // New position
+      secondPartDuration,
+      secondPartDuration,
+      originalRegion.looping,
+      originalRegion.muted,
+      originalRegion.soloed,
+      originalRegion.startLocation.add(firstPartDuration, timeSignature) // Adjust startLocation for second part
+    );
+
+    // Replace the original region with the two new ones
+    this.regions.splice(regionIndex, 1, firstRegion, secondRegion);
+    this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
+  }
+
+  public duplicateRegion(regionIndex: number, targetLocation: Location, timeSignature: TimeSignature): void {
+    const originalRegion = this.regions[regionIndex];
+    if (!originalRegion) return;
+
+    const duplicatedRegion = new MidiRegion(
+      originalRegion.midiData, // Share MIDI data reference for now, deep copy if needed later
+      originalRegion.name,
+      originalRegion.color,
+      targetLocation, // New position
+      originalRegion.size,
+      originalRegion.length,
+      originalRegion.looping,
+      originalRegion.muted,
+      originalRegion.soloed,
+      originalRegion.startLocation
+    );
+
+    this.regions.push(duplicatedRegion);
+    this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
+  }
+
   // Playback support
   scheduleAudioEvents(
     timeOffset: number,

@@ -239,8 +239,6 @@ export class AudioTrack extends AbstractTrack {
         const truncatedSize = location.sub(previousRegion.position, signature);
         previousRegion.size = truncatedSize;
       }
-      // Directly modify the existing object, no need for shallow copy here
-      // this.regions[index - 1] = { ...previousRegion }; // REMOVED
     }
 
     // Logic to ensure that the region is not overlapping with any other region
@@ -271,8 +269,6 @@ export class AudioTrack extends AbstractTrack {
           nextRegion.size = newNextSize;
           nextRegion.trim = newNextTrim;
 
-          // Directly modify the existing object, no need for shallow copy here
-          // this.regions[index + 1] = { ...nextRegion }; // REMOVED
           break;
         } else {
           // The new region is the longer one. We remove the existing region and iterate.
@@ -289,8 +285,6 @@ export class AudioTrack extends AbstractTrack {
           region.size = truncatedSize;
         }
 
-        // Directly modify the existing object, no need for shallow copy here
-        // this.regions[index + 1] = { ...nextRegion }; // REMOVED
         break;
       } else {
         break;
@@ -299,6 +293,83 @@ export class AudioTrack extends AbstractTrack {
 
     // Use shallow copy for the regions array to trigger React re-render if this array is part of state
     this.regions = [...this.regions];
+  }
+
+  public splitRegion(regionIndex: number, splitLocation: Location, timeSignature: TimeSignature): void {
+    const originalRegion = this.regions[regionIndex];
+    if (!originalRegion) return;
+
+    // Calculate the duration of the first part
+    const firstPartDuration = originalRegion.position.diff(splitLocation, timeSignature);
+
+    // Calculate the duration of the second part
+    const originalRegionEnd = originalRegion.position.add(originalRegion.length, timeSignature);
+    const secondPartDuration = splitLocation.diff(originalRegionEnd, timeSignature);
+
+    // Ensure split point is valid (within the region and not at its start/end)
+    if (firstPartDuration.compare(new Duration(0,0,0)) <= 0 || secondPartDuration.compare(new Duration(0,0,0)) <= 0) {
+      console.warn("Split location is at or outside region boundaries. No split performed.");
+      return;
+    }
+
+    // Create the first new region
+    const firstRegion = new AudioRegion(
+      (originalRegion as AudioRegion).audioFile,
+      originalRegion.name,
+      originalRegion.color,
+      originalRegion.position,
+      firstPartDuration, // size
+      firstPartDuration, // length
+      originalRegion.trim,
+      originalRegion.looping,
+      originalRegion.muted,
+      originalRegion.soloed,
+      (originalRegion as AudioRegion).startTime,
+      (originalRegion as AudioRegion).startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime // Placeholder for actual end time calculation
+    );
+
+    // Create the second new region
+    const secondRegion = new AudioRegion(
+      (originalRegion as AudioRegion).audioFile,
+      originalRegion.name,
+      originalRegion.color,
+      splitLocation,
+      secondPartDuration, // size
+      secondPartDuration, // length
+      originalRegion.trim.add(firstPartDuration, timeSignature), // Adjust trim for second part
+      originalRegion.looping,
+      originalRegion.muted,
+      originalRegion.soloed,
+      (originalRegion as AudioRegion).startTime + this.audioState!.gain.context.currentTime - this.audioState!.gain.context.currentTime, // Placeholder for actual start time calculation
+      (originalRegion as AudioRegion).endTime
+    );
+
+    // Replace the original region with the two new ones
+    this.regions.splice(regionIndex, 1, firstRegion, secondRegion);
+    this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
+  }
+
+  public duplicateRegion(regionIndex: number, targetLocation: Location, timeSignature: TimeSignature): void {
+    const originalRegion = this.regions[regionIndex];
+    if (!originalRegion) return;
+
+    const duplicatedRegion = new AudioRegion(
+      (originalRegion as AudioRegion).audioFile,
+      originalRegion.name,
+      originalRegion.color,
+      targetLocation, // New position
+      originalRegion.size,
+      originalRegion.length,
+      (originalRegion as AudioRegion).trim,
+      originalRegion.looping,
+      originalRegion.muted,
+      originalRegion.soloed,
+      (originalRegion as AudioRegion).startTime,
+      (originalRegion as AudioRegion).endTime
+    );
+
+    this.regions.push(duplicatedRegion);
+    this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
   }
 
   static fromJson(file: JSONValue, resolver: AudioFileResolver): AudioTrack {

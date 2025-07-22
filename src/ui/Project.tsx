@@ -230,7 +230,6 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     location: Location,
     duration: Duration,
   ) {
-    const region = new AudioRegion(file, file.name, 'black', location, duration);
     const track = props.project.tracks[trackIndex];
 
     if (track.type !== 'audio') {
@@ -238,6 +237,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     }
 
     const audioTrack = track as AudioTrack;
+    const region = new AudioRegion(file, file.name, 'black', location, duration);
     audioTrack.addRegion(region, location, props.project.timeSignature);
     engine.handleRegionEvent({
       type: RegionEventType.Added,
@@ -247,8 +247,6 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     // Use shallow copy of the tracks array to trigger state update
     props.setTracks([...props.project.tracks]);
   }
-
-  // Removed updateTracksImmutable helper function
 
   function handleMoveRegion(trackIndex: number, regionIndex: number, newPosition: Location) {
     const track = props.project.tracks[trackIndex];
@@ -264,6 +262,26 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     props.setTracks([...props.project.tracks]); // Trigger re-render
   }
 
+  function handleSplitRegion(trackIndex: number, regionIndex: number, splitLocation: Location) {
+    const track = props.project.tracks[trackIndex];
+    if (track instanceof AudioTrack) {
+      track.splitRegion(regionIndex, splitLocation, props.project.timeSignature);
+    } else if (track instanceof InstrumentTrack) {
+      track.splitRegion(regionIndex, splitLocation, props.project.timeSignature);
+    }
+    props.setTracks([...props.project.tracks]); // Trigger re-render
+  }
+
+  function handleDuplicateRegion(trackIndex: number, regionIndex: number, targetLocation: Location) {
+    const track = props.project.tracks[trackIndex];
+    if (track instanceof AudioTrack) {
+      track.duplicateRegion(regionIndex, targetLocation, props.project.timeSignature);
+    } else if (track instanceof InstrumentTrack) {
+      track.duplicateRegion(regionIndex, targetLocation, props.project.timeSignature);
+    }
+    props.setTracks([...props.project.tracks]); // Trigger re-render
+  }
+
   const handleUpdateMidiRegion = (updatedRegion: MidiRegion) => {
     if (props.editingRegion) {
       const { trackIndex, regionIndex } = props.editingRegion;
@@ -276,7 +294,6 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
     }
   };
 
-  // Remove all Music Prism/WamGui logic
   // Only show PianoRoll for instrument tracks
   const editorTrack = props.editingRegion ? props.tracks[props.editingRegion.trackIndex] : null;
 
@@ -386,9 +403,11 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
             onMoveRegion={handleMoveRegion}
             onResizeRegion={handleResizeRegion}
             onRegionDoubleClick={props.onRegionDoubleClick}
+            onSplitRegion={handleSplitRegion} // Pass new prop
+            onDuplicateRegion={handleDuplicateRegion} // Pass new prop
           />
         </div>
-        {props.editingRegion && (
+        {props.editingRegion && editorTrack instanceof InstrumentTrack && (
           <div className={styles.editorPane}>
             <PianoRoll
               region={

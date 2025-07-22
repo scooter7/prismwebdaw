@@ -12,6 +12,12 @@ import {
 import { AudioRegion } from '../core/AudioRegion';
 import { EditableText } from '@blueprintjs/core';
 import { TimelineSettings } from './Timeline';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 
 export interface RegionProps {
   region: RegionInterface;
@@ -22,8 +28,11 @@ export interface RegionProps {
   onMove: (trackIndex: number, regionIndex: number, newPosition: Location) => void;
   onResize: (trackIndex: number, regionIndex: number, newLength: Duration) => void;
   onDoubleClick: (trackIndex: number, regionIndex: number) => void;
+  onSplit: (trackIndex: number, regionIndex: number, splitLocation: Location) => void;
+  onDuplicate: (trackIndex: number, regionIndex: number, targetLocation: Location) => void;
   timeSignature: TimeSignature;
   end: Location;
+  currentPlaybackLocation: Location; // Added to determine split point
 }
 
 function audioToImage(audioBuffer: AudioBuffer, width: number): string {
@@ -107,8 +116,6 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
     left: tempStyle?.left !== undefined ? `${tempStyle.left}px` : `${initialLeft}px`,
     top: `${props.trackIndex * TRACK_HEIGHT_PX}px`,
   };
-
-  // TODO: retrieval should just be based on the scaleFactor.
 
   /**
    * Retrieve the image for the region at the given scale factor.
@@ -272,70 +279,112 @@ export const Region: FunctionComponent<RegionProps> = (props: RegionProps) => {
     }
   }
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default browser context menu
+    // The DropdownMenuTrigger will handle opening the menu
+  };
+
+  const handleSplit = () => {
+    const regionStartTime = props.converter.convertLocation(props.region.position);
+    const regionEndTime = props.converter.convertLocation(props.region.position.add(props.region.length, props.timeSignature));
+    const currentPlaybackTime = props.converter.convertLocation(props.currentPlaybackLocation);
+
+    // Check if playback head is within the region
+    if (currentPlaybackTime > regionStartTime && currentPlaybackTime < regionEndTime) {
+      props.onSplit(props.trackIndex, props.regionIndex, props.currentPlaybackLocation);
+    } else {
+      // Optionally, provide feedback to the user that split is only at playback head
+      console.warn("Cannot split: Playback head is not within the region.");
+    }
+  };
+
+  const handleDuplicate = () => {
+    const targetLocation = props.region.position.add(props.region.length, props.timeSignature);
+    props.onDuplicate(props.trackIndex, props.regionIndex, targetLocation);
+  };
+
+  const regionStartTime = props.converter.convertLocation(props.region.position);
+  const regionEndTime = props.converter.convertLocation(props.region.position.add(props.region.length, props.timeSignature));
+  const currentPlaybackTime = props.converter.convertLocation(props.currentPlaybackLocation);
+  const canSplit = currentPlaybackTime > regionStartTime && currentPlaybackTime < regionEndTime;
+
   return (
-    <div
-      className={styles.region}
-      style={style}
-      onClick={toggleSelection}
-      onDoubleClick={() => props.onDoubleClick(props.trackIndex, props.regionIndex)}
-    >
-      <div className={styles.handles}>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <div
-          className={styles.leftHandle}
-          onPointerDown={onDragLeftStart}
-          onPointerMove={onDragLeftMove}
-          onPointerUp={onDragLeftEnd}
-        />
-        <div
-          className={styles.centerHandle}
-          onPointerDown={onDragRegionStart}
-          onPointerMove={onDragRegionMove}
-          onPointerUp={onDragRegionEnd}
-        />
-        <div
-          className={styles.rightHandle}
-          onPointerDown={onDragRightStart}
-          onPointerMove={onDragRightMove}
-          onPointerUp={onDragRightEnd}
-        />
-        <div
-          className={styles.loopHandle}
-          onPointerDown={onDragLoopStart}
-          onPointerMove={onDragLoopMove}
-          onPointerUp={onDragLoopEnd}
-        />
-      </div>
-      <div className="p-1 truncate">
-        <EditableText
-          alwaysRenderInput={true}
-          value={props.region.name}
-          onChange={(value: string) => {
-            changeName(value);
-          }}
-        />
-      </div>
-      {props.region.data.type === RegionDataType.Audio && (
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: `${REGION_RENDERING_HEIGHT_PX}px`,
-            overflowX: 'hidden',
-          }}
+          className={styles.region}
+          style={style}
+          onClick={toggleSelection}
+          onDoubleClick={() => props.onDoubleClick(props.trackIndex, props.regionIndex)}
+          onContextMenu={handleContextMenu}
         >
-          <img
-            alt={props.region.name}
-            height={REGION_RENDERING_HEIGHT_PX}
-            width={audioImageWidth}
-            src={renderData.current}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: `${-audioImageOffset}px`,
-            }}
-          />
+          <div className={styles.handles}>
+            <div
+              className={styles.leftHandle}
+              onPointerDown={onDragLeftStart}
+              onPointerMove={onDragLeftMove}
+              onPointerUp={onDragLeftEnd}
+            />
+            <div
+              className={styles.centerHandle}
+              onPointerDown={onDragRegionStart}
+              onPointerMove={onDragRegionMove}
+              onPointerUp={onDragRegionEnd}
+            />
+            <div
+              className={styles.rightHandle}
+              onPointerDown={onDragRightStart}
+              onPointerMove={onDragRightMove}
+              onPointerUp={onDragRightEnd}
+            />
+            <div
+              className={styles.loopHandle}
+              onPointerDown={onDragLoopStart}
+              onPointerMove={onDragLoopMove}
+              onPointerUp={onDragLoopEnd}
+            />
+          </div>
+          <div className="p-1 truncate">
+            <EditableText
+              alwaysRenderInput={true}
+              value={props.region.name}
+              onChange={(value: string) => {
+                changeName(value);
+              }}
+            />
+          </div>
+          {props.region.data.type === RegionDataType.Audio && (
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: `${REGION_RENDERING_HEIGHT_PX}px`,
+                overflowX: 'hidden',
+              }}
+            >
+              <img
+                alt={props.region.name}
+                height={REGION_RENDERING_HEIGHT_PX}
+                width={audioImageWidth}
+                src={renderData.current}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: `${-audioImageOffset}px`,
+                }}
+              />
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={handleSplit} disabled={!canSplit}>
+          Split Region
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDuplicate}>
+          Duplicate Region
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
