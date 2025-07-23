@@ -34,6 +34,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "data-structure-typed": "^1.26.2",
+    "directory-tree": "^3.5.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.394.0",
     "midi-sounds-react": "^1.2.54",
