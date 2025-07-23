@@ -34,10 +34,14 @@ export type NodePath = number[];
 
 type NodeData = {
   audioFile?: AudioFile;
+  isMidi?: boolean;
   isLoading?: boolean;
 } | null;
 
 function canDrag(node: TreeNodeInfo<NodeData>) {
+  if (node.nodeData?.isMidi) {
+    return true; // MIDI files are always draggable
+  }
   return node.nodeData?.audioFile?.ready && !node.nodeData.isLoading;
 }
 
@@ -62,6 +66,7 @@ export type BrowserProps = {
     location: Location,
     duration: Duration,
   ) => void;
+  createNewTracksFromMidi: (url: string) => void;
 };
 
 export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) => {
@@ -174,13 +179,14 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
         nodeData: null,
       };
     } else {
+      const isMidi = json.name.endsWith('.mid') || json.name.endsWith('.midi');
       const nodeId = new URL(json.path, document.baseURI).toString();
       return {
         id: nodeId,
         label: json.name,
         isExpanded: false,
-        icon: 'music',
-        nodeData: {},
+        icon: isMidi ? 'document' : 'music',
+        nodeData: { isMidi },
       };
     }
   }
@@ -210,7 +216,13 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
         type: 'SET_IS_SELECTED',
       });
 
-      if (node.childNodes === undefined && node.nodeData && !node.nodeData.audioFile && !node.nodeData.isLoading) {
+      if (
+        !node.nodeData?.isMidi &&
+        node.childNodes === undefined &&
+        node.nodeData &&
+        !node.nodeData.audioFile &&
+        !node.nodeData.isLoading
+      ) {
         dispatch({ type: 'START_LOAD', payload: { path: nodePath } });
       }
     },
@@ -266,10 +278,15 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
     dragLabel.current!.style.display = 'block';
     dragLabel.current!.style.left = `${e.clientX}px`;
     dragLabel.current!.style.top = `${e.clientY}px`;
-    const audioFile = currentTreeNode.current!.nodeData!.audioFile!;
-    const duration = audioFile.buffer.duration;
     const regionPlaceholder = document.getElementById(REGION_PLACEHOLDER_ID);
-    regionPlaceholder!.style.width = `${duration * props.scale * TIMELINE_FACTOR_PX}px`;
+
+    if (currentTreeNode.current?.nodeData?.isMidi) {
+      regionPlaceholder!.style.width = `120px`; // Default width for MIDI
+    } else {
+      const audioFile = currentTreeNode.current!.nodeData!.audioFile!;
+      const duration = audioFile.buffer.duration;
+      regionPlaceholder!.style.width = `${duration * props.scale * TIMELINE_FACTOR_PX}px`;
+    }
   }
 
   function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
@@ -294,28 +311,34 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
         e.clientY >= scrollViewRect.top &&
         e.clientY <= scrollViewRect.bottom
       ) {
-        const effectiveX = e.clientX - scrollViewRect.left + regionScrollView!.scrollLeft;
-        const startTime = effectiveX / props.scale / TIMELINE_FACTOR_PX;
-        const timelineSettings = new TimelineSettings(props.scale);
-        const location = timelineSettings.snap(
-          startTime,
-          props.end,
-          props.timeSignature,
-          props.converter,
-        );
-        const effectiveY = e.clientY - scrollViewRect.top + regionScrollView!.scrollTop;
-        const trackIndex = Math.floor(effectiveY / TRACK_HEIGHT_PX);
-        const audioFile = currentTreeNode.current!.nodeData!.audioFile!;
-        const audioDuration = audioFile.buffer.duration;
-        const endTime = startTime + audioDuration;
-        const endLocation = props.converter.convertTime(endTime);
-        const duration = location.diff(endLocation, props.timeSignature);
+        const isMidi = currentTreeNode.current!.nodeData!.isMidi;
 
-        if (trackIndex >= props.tracks.length) {
-          props.createNewAudioTrackWithRegion(audioFile, location, duration);
+        if (isMidi) {
+          props.createNewTracksFromMidi(currentTreeNode.current!.id as string);
         } else {
-          if (props.tracks[trackIndex].type === 'audio') {
-            props.addRegionToTrack(audioFile, trackIndex, location, duration);
+          const effectiveX = e.clientX - scrollViewRect.left + regionScrollView!.scrollLeft;
+          const startTime = effectiveX / props.scale / TIMELINE_FACTOR_PX;
+          const timelineSettings = new TimelineSettings(props.scale);
+          const location = timelineSettings.snap(
+            startTime,
+            props.end,
+            props.timeSignature,
+            props.converter,
+          );
+          const effectiveY = e.clientY - scrollViewRect.top + regionScrollView!.scrollTop;
+          const trackIndex = Math.floor(effectiveY / TRACK_HEIGHT_PX);
+          const audioFile = currentTreeNode.current!.nodeData!.audioFile!;
+          const audioDuration = audioFile.buffer.duration;
+          const endTime = startTime + audioDuration;
+          const endLocation = props.converter.convertTime(endTime);
+          const duration = location.diff(endLocation, props.timeSignature);
+
+          if (trackIndex >= props.tracks.length) {
+            props.createNewAudioTrackWithRegion(audioFile, location, duration);
+          } else {
+            if (props.tracks[trackIndex].type === 'audio') {
+              props.addRegionToTrack(audioFile, trackIndex, location, duration);
+            }
           }
         }
       }

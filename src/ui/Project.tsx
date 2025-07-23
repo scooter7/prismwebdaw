@@ -53,6 +53,7 @@ export type ProjectProps = {
   setEditingRegion: (region: { trackIndex: number; regionIndex: number } | null) => void;
   onRegionDoubleClick: (trackIndex: number, regionIndex: number) => void;
   appendTrack: (trackType: string) => void;
+  createNewTracksFromMidi: (url: string) => void;
 };
 
 export const Project: FunctionComponent<ProjectProps> = (props) => {
@@ -361,6 +362,7 @@ export const Project: FunctionComponent<ProjectProps> = (props) => {
                     end={end}
                     createNewAudioTrackWithRegion={createNewAudioTrackWithRegion}
                     addRegionToTrack={addRegionToTrack}
+                    createNewTracksFromMidi={props.createNewTracksFromMidi}
                   />
                 </div>
               </div>

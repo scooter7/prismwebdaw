@@ -5,6 +5,8 @@ import { NoteMidiData, MidiDataType } from '../core/MidiData';
 import { Analog } from '../instruments/Analog';
 import { Project } from '../core/Project';
 import { Location, Duration, TimeSignature } from '../core/Common';
+import { createInstrument } from '../utils/instruments';
+import { COLORS } from '../ui/Config';
 
 export async function parseMidiFile(file: File, project: Project): Promise<InstrumentTrack[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -51,8 +53,70 @@ export async function parseMidiFile(file: File, project: Project): Promise<Instr
 
     const region = new MidiRegion(notes, trackName, '#39f', firstNoteStart, regionDuration);
 
-    const instrument = new Analog();
+    const instrument = createInstrument(track.instrument.name || 'analog');
     const newTrack = new InstrumentTrack(trackName, '#39f', false, instrument);
+    newTrack.regions.push(region);
+    newTracks.push(newTrack);
+  });
+
+  return newTracks;
+}
+
+export async function loadAndParseMidiFromUrl(
+  url: string,
+  project: Project,
+): Promise<InstrumentTrack[]> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch MIDI file: ${response.statusText}`);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  const midi = new Midi(arrayBuffer);
+
+  const newTracks: InstrumentTrack[] = [];
+  const converter = project.locationToTime;
+  const timeSignature = project.timeSignature;
+
+  midi.tracks.forEach((track, trackIndex) => {
+    if (track.notes.length === 0) {
+      return;
+    }
+
+    const notes: NoteMidiData[] = track.notes.map((note) => {
+      const startLocation = converter.convertTime(note.time);
+      const endLocation = converter.convertTime(note.time + note.duration);
+      const duration = startLocation.diff(endLocation, timeSignature);
+
+      return {
+        type: MidiDataType.Note,
+        start: startLocation,
+        duration: duration,
+        note: note.midi,
+        velocity: Math.round(note.velocity * 127),
+      };
+    });
+
+    if (notes.length === 0) {
+      return;
+    }
+
+    const trackName = track.name || `MIDI File Track ${trackIndex + 1}`;
+    const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+    const firstNoteStart = notes.reduce((min, p) => (p.start.compare(min.start) < 0 ? p : min))
+      .start;
+    const lastNoteEnd = notes.reduce((max, p) => {
+      const end = p.start.add(p.duration, timeSignature);
+      const maxEnd = max.start.add(max.duration, timeSignature);
+      return end.compare(maxEnd) > 0 ? p : max;
+    });
+    const lastNoteEndLocation = lastNoteEnd.start.add(lastNoteEnd.duration, timeSignature);
+    const regionDuration = firstNoteStart.diff(lastNoteEndLocation, timeSignature);
+
+    const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
+
+    const instrument = createInstrument(track.instrument.name || 'analog');
+    const newTrack = new InstrumentTrack(trackName, randomColor, false, instrument);
     newTrack.regions.push(region);
     newTracks.push(newTrack);
   });

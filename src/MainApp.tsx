@@ -46,7 +46,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from './components/ui/sheet';
-import { parseMidiFile } from './controller/MidiImport';
+import { loadAndParseMidiFromUrl, parseMidiFile } from './controller/MidiImport';
 import { TrackEventType } from './core/Events';
 import { AiChat } from './ui/AiChat';
 import { InstrumentTrack } from './core/InstrumentTrack';
@@ -244,6 +244,38 @@ function MainApp() {
     }
   };
 
+  const createNewTracksFromMidi = async (url: string) => {
+    if (!project) return;
+
+    setLoading(true);
+    setLoadingProgress(0);
+
+    try {
+      const newMidiTracks = await loadAndParseMidiFromUrl(url, project);
+
+      if (newMidiTracks.length > 0) {
+        for (const track of newMidiTracks) {
+          await track.instrument.initialize(audioContext);
+        }
+
+        const updatedTracks = [...project.tracks, ...newMidiTracks];
+        project.tracks = updatedTracks;
+
+        for (const track of newMidiTracks) {
+          await engine.handleTrackEvent({
+            type: TrackEventType.Added,
+            track: track,
+          });
+        }
+        setTracks(updatedTracks);
+      }
+    } catch (error) {
+      console.error('Failed to import MIDI file from URL:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleMidiPatternGenerated = async (pattern: any) => {
     if (!project) return;
     if (!pattern.trackName || !pattern.notes || !Array.isArray(pattern.notes) || pattern.notes.length === 0) {
@@ -408,6 +440,7 @@ function MainApp() {
                 setEditingRegion={setEditingRegion}
                 onRegionDoubleClick={handleRegionDoubleClick}
                 appendTrack={appendTrack}
+                createNewTracksFromMidi={createNewTracksFromMidi}
               />
             </AudioFileManagerContext.Provider>
           </main>
