@@ -26,7 +26,7 @@ import { Project } from './ui/Project';
 import { Project as ProjectObj } from './core/Project';
 import { createProject, loadProject, saveAsProject, saveProject } from './controller/Projects';
 import { copy, cut, doDelete, paste, redo, undo } from './controller/Edit';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Engine } from './core/Engine';
 import { BUFFER_SIZE, SAMPLE_RATE } from './core/Config';
 import { AudioFileManager } from './core/AudioFileManager';
@@ -80,12 +80,14 @@ function MainApp() {
     context: AudioContext;
   } | null>(null);
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const audioFileManager = useRef<AudioFileManager>(new AudioFileManager());
   const midiFileInputRef = useRef<HTMLInputElement>(null);
 
   const [project, setProject] = useState<ProjectObj | null>(null);
   const [tracks, setTracks] = useState<AbstractTrack[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [confirmStopAudio, setConfirmStopAudio] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -101,37 +103,51 @@ function MainApp() {
 
   const continueChangeProject = useRef<() => void>();
 
-  useEffect(() => {
-    const initializeApp = () => {
-      const context = new AudioContext();
-      const initialProject = new ProjectObj();
-      const engine = new Engine(
-        context,
-        { bufferSize: BUFFER_SIZE, sampleRate: SAMPLE_RATE },
-        initialProject,
-      );
+  const initializeApp = () => {
+    if (isInitialized) return;
 
-      setEngineContainer({ engine, initialProject, context });
-      setProject(initialProject);
-      setTracks(initialProject.tracks);
+    const context = new AudioContext();
+    const initialProject = new ProjectObj();
+    const engine = new Engine(context, { bufferSize: BUFFER_SIZE, sampleRate: SAMPLE_RATE }, initialProject);
 
-      engine.initialize(() => {
-        setLoading(false);
-      });
-    };
+    setEngineContainer({ engine, initialProject, context });
+    setProject(initialProject);
+    setTracks(initialProject.tracks);
 
-    initializeApp();
-  }, []); // Empty dependency array ensures this runs only once on mount
+    setLoading(true);
+    engine.initialize(() => {
+      setLoading(false);
+    });
 
-  if (loading || !engineContainer || !project) {
+    setIsInitialized(true);
+  };
+
+  if (!isInitialized) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">WebDAW</h1>
-          <p className="text-muted-foreground">Initializing Audio Engine...</p>
+        <div className="flex flex-col items-center">
+          <img src="logo-192.png" alt="WebDAW Logo" width={96} className="mb-6" />
+          <h1 className="text-3xl font-bold mb-2">WebDAW</h1>
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
+            WebDAW is a digital audio workstation that runs in your browser.<br />
+            <span className="block mt-2">To begin, click the button below to start the audio engine.</span>
+          </p>
+          <Button
+            size="lg"
+            className="text-lg px-8 py-4"
+            onClick={initializeApp}
+            autoFocus
+          >
+            Start WebDAW
+          </Button>
         </div>
       </div>
     );
+  }
+
+  if (!engineContainer || !project) {
+    // This should not be reached if isInitialized is true, but it's a good safeguard.
+    return <div>Loading...</div>;
   }
 
   const { engine, context: audioContext } = engineContainer;
@@ -224,12 +240,7 @@ function MainApp() {
       // All other track types are instrument tracks
       instrument = createInstrument(trackType);
       console.log(`Created instrument: ${instrument.name} for track type: ${trackType}`);
-      newTrack = new InstrumentTrack(
-        instrument.name,
-        COLORS[Math.floor(Math.random() * COLORS.length)],
-        false,
-        instrument,
-      );
+      newTrack = new InstrumentTrack(instrument.name, COLORS[Math.floor(Math.random() * COLORS.length)], false, instrument);
       console.log('Created new InstrumentTrack:', newTrack);
     }
 
@@ -332,12 +343,7 @@ function MainApp() {
 
   const handleMidiPatternGenerated = async (pattern: any) => {
     if (!project) return;
-    if (
-      !pattern.trackName ||
-      !pattern.notes ||
-      !Array.isArray(pattern.notes) ||
-      pattern.notes.length === 0
-    ) {
+    if (!pattern.trackName || !pattern.notes || !Array.isArray(pattern.notes) || pattern.notes.length === 0) {
       console.error('Invalid MIDI pattern object received from AI', pattern);
       return;
     }
@@ -368,7 +374,7 @@ function MainApp() {
     const region = new MidiRegion(notes, trackName, randomColor, firstNoteStart, regionDuration);
 
     const instrument = createInstrument(pattern.instrument || 'analog');
-
+    
     // Await instrument initialization here
     try {
       await instrument.initialize(audioContext);
