@@ -20,6 +20,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from 'lucide-react';
 import { Project } from './ui/Project';
 import { Project as ProjectObj } from './core/Project';
@@ -59,6 +60,9 @@ import { Instrument } from './core/Instrument';
 import { AbstractTrack } from './core/Track';
 import { AudioTrack } from './core/AudioTrack';
 import { createInstrument } from './utils/instruments';
+import { useAuth } from './auth/AuthContext';
+import { SaveAsDialog } from './ui/SaveAsDialog';
+import { ProjectBrowserDialog } from './ui/ProjectBrowserDialog';
 
 const LICENSE =
   'MIT License\n\nCopyright (c) 2023, 2024 Hans-Martin Will\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.';
@@ -69,6 +73,7 @@ function openDocumentation() {
 }
 
 function MainApp() {
+  const { user, signOut } = useAuth();
   const [engineContainer, setEngineContainer] = useState<{
     engine: Engine;
     initialProject: ProjectObj;
@@ -93,6 +98,8 @@ function MainApp() {
     trackIndex: number;
     regionIndex: number;
   } | null>(null);
+  const [isSaveAsOpen, setIsSaveAsOpen] = useState(false);
+  const [isProjectBrowserOpen, setIsProjectBrowserOpen] = useState(false);
 
   const continueChangeProject = useRef<() => void>();
 
@@ -160,6 +167,55 @@ function MainApp() {
       action();
     }
   }
+
+  const handleNewProject = () => {
+    changeProject(async () => {
+      const newProject = await createProject(audioFileManager.current);
+      loadFiles(newProject);
+    });
+  };
+
+  const handleSaveProject = async () => {
+    if (!project || !user) return;
+
+    if (project.id) {
+      try {
+        await saveProject(project, user);
+        // TODO: Show a success toast here
+        console.log('Project saved successfully!');
+      } catch (error) {
+        console.error('Failed to save project:', error);
+        // TODO: Show an error toast
+      }
+    } else {
+      setIsSaveAsOpen(true);
+    }
+  };
+
+  const handleSaveAsProject = async (newName: string) => {
+    if (!project || !user) return;
+
+    try {
+      const newProject = await saveAsProject(project, newName, user);
+      setProject(newProject);
+      console.log('Project saved as new entry!');
+    } catch (error) {
+      console.error('Failed to save project as:', error);
+    }
+  };
+
+  const handleLoadProject = (projectId: string) => {
+    if (!user) return;
+
+    changeProject(async () => {
+      try {
+        const loadedProject = await loadProject(projectId, audioFileManager.current);
+        loadFiles(loadedProject);
+      } catch (error) {
+        console.error('Failed to load project:', error);
+      }
+    });
+  };
 
   async function appendTrack(trackType: string) {
     if (!project) return;
@@ -423,28 +479,51 @@ function MainApp() {
           </DialogContent>
         </Dialog>
 
-        <div
-          className="h-screen max-h-screen w-screen flex flex-row bg-background text-foreground"
-        >
-          <main className="flex-grow flex flex-col overflow-hidden bg-background text-foreground">
-            <AudioFileManagerContext.Provider value={audioFileManager.current}>
-              <Project
-                project={project}
-                tracks={tracks}
-                setTracks={setTracks}
-                mixerVisible={mixerVisible}
-                setMixerVisible={setMixerVisible}
-                browserVisible={browserVisible}
-                setBrowserVisible={setBrowserVisible}
-                editingRegion={editingRegion}
-                setEditingRegion={setEditingRegion}
-                onRegionDoubleClick={handleRegionDoubleClick}
-                appendTrack={appendTrack}
-                createNewTracksFromMidi={createNewTracksFromMidi}
-              />
-            </AudioFileManagerContext.Provider>
-          </main>
-          <aside className="w-96 flex-shrink-0 border-l border-border bg-muted flex flex-col">
+        <div className="h-screen max-h-screen w-screen flex flex-col bg-background text-foreground">
+          <header className="flex-shrink-0 p-2 border-b border-border flex items-center gap-2">
+            <h1 className="font-bold text-lg mr-4">WebDAW</h1>
+            <Button variant="ghost" size="sm" onClick={handleNewProject}>
+              <FilePlus className="h-4 w-4 mr-2" /> New
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsProjectBrowserOpen(true)}
+              disabled={!user}
+            >
+              <FolderDown className="h-4 w-4 mr-2" /> Load
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleSaveProject} disabled={!user}>
+              <Save className="h-4 w-4 mr-2" /> Save
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setIsSaveAsOpen(true)} disabled={!user}>
+              <Copy className="h-4 w-4 mr-2" /> Save As
+            </Button>
+            <div className="flex-grow" />
+            <Button variant="ghost" size="sm" onClick={signOut}>
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
+            </Button>
+          </header>
+          <div className="flex-grow flex flex-row overflow-hidden">
+            <main className="flex-grow flex flex-col overflow-hidden bg-background text-foreground">
+              <AudioFileManagerContext.Provider value={audioFileManager.current}>
+                <Project
+                  project={project}
+                  tracks={tracks}
+                  setTracks={setTracks}
+                  mixerVisible={mixerVisible}
+                  setMixerVisible={setMixerVisible}
+                  browserVisible={browserVisible}
+                  setBrowserVisible={setBrowserVisible}
+                  editingRegion={editingRegion}
+                  setEditingRegion={setEditingRegion}
+                  onRegionDoubleClick={handleRegionDoubleClick}
+                  appendTrack={appendTrack}
+                  createNewTracksFromMidi={createNewTracksFromMidi}
+                />
+              </AudioFileManagerContext.Provider>
+            </main>
+            <aside className="w-96 flex-shrink-0 border-l border-border bg-muted flex flex-col">
               <div className="p-4 border-b border-border">
                 <h2 className="text-lg font-semibold flex items-center">
                   <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
@@ -454,7 +533,8 @@ function MainApp() {
               <div className="flex-grow p-4 overflow-y-auto">
                 <AiChat onMidiPatternGenerated={handleMidiPatternGenerated} />
               </div>
-          </aside>
+            </aside>
+          </div>
           <input
             type="file"
             ref={midiFileInputRef}
@@ -474,6 +554,22 @@ function MainApp() {
             </SheetHeader>
           </SheetContent>
         </Sheet>
+
+        {user && (
+          <>
+            <SaveAsDialog
+              isOpen={isSaveAsOpen}
+              onClose={() => setIsSaveAsOpen(false)}
+              onSave={handleSaveAsProject}
+              currentName={project.name}
+            />
+            <ProjectBrowserDialog
+              isOpen={isProjectBrowserOpen}
+              onClose={() => setIsProjectBrowserOpen(false)}
+              onLoadProject={handleLoadProject}
+            />
+          </>
+        )}
       </AudioContextContext.Provider>
     </EngineContext.Provider>
   );

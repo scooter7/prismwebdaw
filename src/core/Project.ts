@@ -26,6 +26,8 @@ MidiTrack.registerFactory();
  * Top-level container for a project and all its associatd resources.
  */
 export class Project implements NamedObject, ToJson, AudioFileResolver {
+  public id?: string;
+  public userId?: string;
   public audioFiles: AudioFile[] = [];
   public tracks: AbstractTrack[] = [];
 
@@ -158,7 +160,7 @@ export class Project implements NamedObject, ToJson, AudioFileResolver {
 
       const tracks = tracksJson.map((track) => AbstractTrack.fromJson(track, resolver));
 
-      return new Project(
+      const project = new Project(
         name,
         bpm,
         timeSignature,
@@ -170,6 +172,10 @@ export class Project implements NamedObject, ToJson, AudioFileResolver {
         tracks,
         audioFiles,
       );
+
+      // The name is set from the JSON data, but can be overridden by the DB record's name
+      project.name = name;
+      return project;
     } else {
       throw Error('Expected a JSON object as argument');
     }
