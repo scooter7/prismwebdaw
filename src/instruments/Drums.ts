@@ -6,9 +6,9 @@ type DrumSample = {
 };
 
 const DRUM_SAMPLES: Record<number, string> = {
-  36: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/kick/bd_808.flac', // Kick
-  38: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/snare/drum_snare_hard.flac', // Snare
-  42: 'https://ai-music.github.io/webdaw/library/samples/sample-pi/drums/one-shots/cymbal/drum_cymbal_closed.flac', // Closed Hi-hat
+  36: 'library/samples/sample-pi/drums/one-shots/kick/bd_808.flac', // Kick
+  38: 'library/samples/sample-pi/drums/one-shots/snare/drum_snare_hard.flac', // Snare
+  42: 'library/samples/sample-pi/drums/one-shots/cymbal/drum_cymbal_closed.flac', // Closed Hi-hat
 };
 
 export class Drums implements Instrument {
@@ -25,10 +25,12 @@ export class Drums implements Instrument {
     if (!this.isLoaded) {
       await Promise.all(
         Object.entries(DRUM_SAMPLES).map(async ([note, url]) => {
-          const response = await fetch(url);
+          // Construct URL relative to base URI
+          const absoluteUrl = new URL(url, document.baseURI).toString();
+          const response = await fetch(absoluteUrl);
           const arrayBuffer = await response.arrayBuffer();
           const buffer = await context.decodeAudioData(arrayBuffer);
-          this.samples[Number(note)] = { buffer, url };
+          this.samples[Number(note)] = { buffer, url: absoluteUrl };
         })
       );
       this.isLoaded = true;
