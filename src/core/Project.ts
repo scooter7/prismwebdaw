@@ -1,4 +1,3 @@
-import { DirectionLeft } from '@blueprintjs/icons/lib/esm/generated/16px/paths';
 import { AudioFile, AudioFileResolver } from './AudioFile';
 import {
   JSONValue,
