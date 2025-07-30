@@ -59,6 +59,7 @@ import { Instrument } from './core/Instrument';
 import { AbstractTrack } from './core/Track';
 import { AudioTrack } from './core/AudioTrack';
 import { createInstrument } from './utils/instruments';
+import { ProjectManager } from './ui/ProjectManager';
 
 const LICENSE =
   'MIT License\n\nCopyright (c) 2023, 2024 Hans-Martin Will\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.';
@@ -84,6 +85,7 @@ function MainApp() {
   const [tracks, setTracks] = useState<AbstractTrack[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [initializing, setInitializing] = useState(false);
   const [confirmStopAudio, setConfirmStopAudio] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [mixerVisible, setMixerVisible] = useState(false);
@@ -107,9 +109,9 @@ function MainApp() {
     setProject(initialProject);
     setTracks(initialProject.tracks);
 
-    setLoading(true);
+    setInitializing(true);
     engine.initialize(() => {
-      setLoading(false);
+      setInitializing(false);
     });
 
     setIsInitialized(true);
@@ -124,6 +126,17 @@ function MainApp() {
         <div className="text-center">
           <h1 className="text-3xl font-bold">WebDAW</h1>
           <p className="text-muted-foreground">Click anywhere to start the audio engine</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (initializing) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">WebDAW</h1>
+          <p className="text-muted-foreground">Initializing audio engine...</p>
         </div>
       </div>
     );
@@ -381,7 +394,7 @@ function MainApp() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={loading}>
+        <Dialog open={loading && !initializing}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Loading Project</DialogTitle>
@@ -427,6 +440,60 @@ function MainApp() {
           className="h-screen max-h-screen w-screen flex flex-row bg-background text-foreground"
         >
           <main className="flex-grow flex flex-col overflow-hidden bg-background text-foreground">
+            <div className="border-b border-border p-2 flex justify-between items-center bg-muted">
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => changeProject(() => {
+                    createProject(audioFileManager.current, (newProject) => {
+                      loadFiles(newProject);
+                    });
+                  })}
+                >
+                  <FilePlus className="h-4 w-4 mr-2" />
+                  New
+                </Button>
+                <ProjectManager 
+                  project={project}
+                  onSaveProject={saveProject}
+                  onLoadProject={async (projectId) => {
+                    const loadedProject = await loadProject(audioFileManager.current, projectId);
+                    if (loadedProject) {
+                      loadFiles(loadedProject);
+                    }
+                    return loadedProject;
+                  }}
+                  onProjectLoaded={loadFiles}
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="ghost" size="sm" onClick={undo}>
+                  <Undo className="h-4 w-4 mr-2" />
+                  Undo
+                </Button>
+                <Button variant="ghost" size="sm" onClick={redo}>
+                  <Redo className="h-4 w-4 mr-2" />
+                  Redo
+                </Button>
+                <Button variant="ghost" size="sm" onClick={cut}>
+                  <Scissors className="h-4 w-4 mr-2" />
+                  Cut
+                </Button>
+                <Button variant="ghost" size="sm" onClick={copy}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+                <Button variant="ghost" size="sm" onClick={paste}>
+                  <ClipboardPaste className="h-4 w-4 mr-2" />
+                  Paste
+                </Button>
+                <Button variant="ghost" size="sm" onClick={doDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </div>
             <AudioFileManagerContext.Provider value={audioFileManager.current}>
               <Project
                 project={project}

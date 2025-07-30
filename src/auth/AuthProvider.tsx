@@ -28,9 +28,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     getInitialSession(); // Call it once on mount
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        console.log(`AuthProvider: Auth state changed event: ${_event}, newSession:`, newSession);
+    // Store the subscription to properly unsubscribe later
+    const subscription = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        console.log(`AuthProvider: Auth state changed event: ${_event}`);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false); // Ensure loading is false after any state change
@@ -40,7 +41,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       console.log('AuthProvider: Unsubscribing from auth listener.');
-      authListener?.subscription.unsubscribe();
+      // Properly unsubscribe from the auth state change listener
+      subscription.data.subscription.unsubscribe();
     };
   }, []); // Empty dependency array means this effect runs once on mount
 

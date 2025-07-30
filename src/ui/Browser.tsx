@@ -169,6 +169,22 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
   const [nodes, dispatch] = useReducer(treeReducer, INITIAL_STATE);
 
   function jsonToTreeNodes(json: any): TreeNodeInfo<NodeData> {
+    if (!json) {
+      console.error('jsonToTreeNodes called with null or undefined json');
+      return {
+        id: 'error',
+        label: 'Error: Invalid data',
+        isExpanded: false,
+        icon: 'error',
+        nodeData: null,
+      };
+    }
+    
+    // Check if this is an error node we created
+    if (json.id === 'error') {
+      return json;
+    }
+    
     if (json.children) {
       return {
         id: json.path,
@@ -179,27 +195,96 @@ export const Browser: FunctionComponent<BrowserProps> = (props: BrowserProps) =>
         nodeData: null,
       };
     } else {
-      const isMidi = json.name.endsWith('.mid') || json.name.endsWith('.midi');
-      const nodeId = new URL(json.path, document.baseURI).toString();
-      return {
-        id: nodeId,
-        label: json.name,
-        isExpanded: false,
-        icon: isMidi ? 'document' : 'music',
-        nodeData: { isMidi },
-      };
+      const isMidi = json.name && (json.name.endsWith('.mid') || json.name.endsWith('.midi'));
+      try {
+        const nodeId = new URL(json.path, document.baseURI).toString();
+        return {
+          id: nodeId,
+          label: json.name,
+          isExpanded: false,
+          icon: isMidi ? 'document' : 'music',
+          nodeData: { isMidi },
+        };
+      } catch (e: any) {
+        console.error('Error creating URL for path:', json.path, e);
+        return {
+          id: 'error-' + json.path,
+          label: 'Error: ' + json.name,
+          isExpanded: false,
+          icon: 'error',
+          nodeData: null,
+        };
+      }
     }
   }
 
   useEffect(() => {
-    const urlString = new URL(LIBRARY_JSON, document.baseURI).toString();
-    fetch(urlString).then((response) => {
-      if (response.ok) {
-        response.json().then((json) => {
-          dispatch({ type: 'RELOAD_TREE_NODES', payload: { nodes: [jsonToTreeNodes(json)] } });
+    const fetchLibrary = async () => {
+      try {
+        // Try multiple approaches to fetch the library.json file
+        let response;
+        let text;
+        let json;
+        
+        // First try with the current approach
+        const urlString = new URL(LIBRARY_JSON, document.baseURI).toString();
+        console.log('Fetching library from:', urlString);
+        
+        response = await fetch(urlString);
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        text = await response.text();
+        console.log('Response text (first 200 chars):', text.substring(0, 200));
+        
+        // Check if the response starts with a DOCTYPE (which would indicate HTML instead of JSON)
+        if (text.trim().startsWith('<!doctype') || text.trim().startsWith('<!DOCTYPE')) {
+          // Try with an absolute path approach
+          console.log('Received HTML, trying absolute path approach');
+          const absoluteUrl = `${window.location.origin}/${LIBRARY_JSON}`;
+          console.log('Fetching library from absolute URL:', absoluteUrl);
+          
+          response = await fetch(absoluteUrl);
+          console.log('Absolute URL response status:', response.status);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          text = await response.text();
+          console.log('Absolute URL response text (first 200 chars):', text.substring(0, 200));
+          
+          // Check again if it's HTML
+          if (text.trim().startsWith('<!doctype') || text.trim().startsWith('<!DOCTYPE')) {
+            throw new Error('Received HTML instead of JSON - check if the file is being served correctly');
+          }
+        }
+        
+        json = JSON.parse(text);
+        console.log('Successfully parsed JSON, creating tree nodes');
+        dispatch({ type: 'RELOAD_TREE_NODES', payload: { nodes: [jsonToTreeNodes(json)] } });
+      } catch (error) {
+        console.error('Failed to fetch or parse library.json:', error);
+        // Show an error message to the user
+        dispatch({ 
+          type: 'RELOAD_TREE_NODES', 
+          payload: { 
+            nodes: [{
+              id: 'error',
+              label: 'Error loading library',
+              isExpanded: false,
+              icon: 'error',
+              nodeData: null,
+            }] 
+          } 
         });
       }
-    });
+    };
+    
+    fetchLibrary();
   }, []);
 
   const handleNodeClick = useCallback(

@@ -2,6 +2,7 @@
 
 import { AudioFileManager } from '../core/AudioFileManager';
 import { Project } from '../core/Project';
+import { saveProjectToSupabase, loadProjectFromSupabase } from './ProjectSave';
 
 /**
  * Project > New
@@ -34,21 +35,31 @@ export function createProject(afm: AudioFileManager, callback: (project: Project
 /**
  * Project > Load...
  */
-export function loadProject(afm: AudioFileManager) {
-  /* ... */
+export async function loadProject(afm: AudioFileManager, projectId: string): Promise<Project | null> {
   console.log('Loading an existing project.');
+  const project = await loadProjectFromSupabase(projectId);
+  
+  if (project) {
+    project.audioFiles.forEach((audioFile) => {
+      afm.registerAudioFile(audioFile);
+    });
+  }
+  
+  return project;
 }
 
 /**
  * Project > Save
  */
-export function saveProject() {
+export async function saveProject(project: Project, projectId?: string) {
   console.log('Save project');
+  return await saveProjectToSupabase(project, projectId);
 }
 
 /**
  * Project > Save As...
  */
-export function saveAsProject() {
+export async function saveAsProject(project: Project) {
   console.log('Save As project');
+  return await saveProjectToSupabase(project);
 }

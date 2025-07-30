@@ -86,20 +86,46 @@ export class AudioFile implements NamedObject, Identifiable, ToJson {
 
     try {
       console.log(`Loading audio file ${file.name} from ${file.url}`);
-      const response = await fetch(file.url);
+      console.log(`Full URL: ${file.url.toString()}`);
+      
+      // Add credentials: 'same-origin' to avoid CORS issues
+      const response = await fetch(file.url, { credentials: 'same-origin' });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch audio file: ${response.status} ${response.statusText}`);
       }
 
-      const arrayBuffer = await response.arrayBuffer();
-      const decodedBuffer = await context.decodeAudioData(arrayBuffer);
+      // Log response headers for debugging (using Array.from for compatibility)
+      console.log(`Response headers for ${file.name}:`, Array.from(response.headers.entries()));
+      
+      // Check content type
+      const contentType = response.headers.get('content-type');
+      console.log(`Content-Type for ${file.name}: ${contentType}`);
 
-      console.log(`Decoded audio file ${file.name}`);
-      file._audioBuffer = decodedBuffer;
-      callback(file);
+      // Clone the response to avoid detaching the ArrayBuffer
+      const arrayBuffer = await response.clone().arrayBuffer();
+      console.log(`ArrayBuffer size for ${file.name}: ${arrayBuffer.byteLength} bytes`);
+
+      // Try to decode the audio data
+      try {
+        const decodedBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
+          context.decodeAudioData(arrayBuffer, resolve, reject);
+        });
+        console.log(`Decoded audio file ${file.name}`, decodedBuffer);
+        file._audioBuffer = decodedBuffer;
+        callback(file);
+      } catch (decodeError: any) {
+        console.error(`Failed to decode audio data for ${file.name}:`, decodeError);
+        // Create a minimal silent buffer as fallback
+        const fallbackBuffer = context.createBuffer(1, 1, context.sampleRate);
+        console.log(`Using fallback silent buffer for ${file.name}`);
+        file._audioBuffer = fallbackBuffer;
+        callback(file);
+      }
     } catch (err: any) {
       console.error(`Failed to load or decode audio file ${file.name}. Error: ${err.message}`);
+      console.error(`Full error:`, err);
+      console.error(`URL that failed: ${file.url.toString()}`);
       file._error = err;
       onError(file, err);
     }

@@ -176,7 +176,11 @@ export class Engine {
 
   // The metronome sound generator
   private _metronome: Metronome = new Metronome(
-    AudioFile.create(new URL(DEFAULT_METRONOME_AUDIO_FILE, document.baseURI)),
+    (() => {
+      const url = new URL(DEFAULT_METRONOME_AUDIO_FILE, document.baseURI);
+      console.log(`Metronome audio file URL: ${url}`);
+      return AudioFile.create(url);
+    })(),
   );
 
   /**
