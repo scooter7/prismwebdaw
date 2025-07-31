@@ -21,6 +21,7 @@ import {
   CLICK_TO_DRAG_TIMEOUT_MS,
   LIBRARY_JSON,
   REGION_PLACEHOLDER_ID,
+  REGION_SCROLL_VIEW_ID,
   TIMELINE_FACTOR_PX,
   TRACK_HEIGHT_PX,
 } from './Config';
@@ -88,7 +89,8 @@ function forNodeAtPath(
   path: NodePath,
   fn: (node: TreeNodeInfo<NodeData>) => void
 ) {
-  fn(Tree.nodeFromPath(path, nodes)!);
+  const node = (Tree as any).nodeFromPath(path, nodes) as TreeNodeInfo<NodeData> | null; // blueprint's internal
+  if (node) fn(node);
 }
 
 function treeReducer(
@@ -98,11 +100,13 @@ function treeReducer(
   const newState = cloneDeep(state);
   switch (action.type) {
     case 'DESELECT_ALL':
-      forEachNode(newState, n => (n.isSelected = false));
+      forEachNode(newState, (n) => {
+        n.isSelected = false;
+      });
       return newState;
 
     case 'SET_IS_EXPANDED':
-      forNodeAtPath(newState, action.payload.path, n => {
+      forNodeAtPath(newState, action.payload.path, (n) => {
         n.isExpanded = action.payload.isExpanded;
         if (n.childNodes?.length) {
           n.icon = action.payload.isExpanded ? 'folder-open' : 'folder-close';
@@ -111,7 +115,7 @@ function treeReducer(
       return newState;
 
     case 'SET_IS_SELECTED':
-      forNodeAtPath(newState, action.payload.path, n => {
+      forNodeAtPath(newState, action.payload.path, (n) => {
         n.isSelected = action.payload.isSelected;
       });
       return newState;
@@ -120,7 +124,7 @@ function treeReducer(
       return action.payload.nodes;
 
     case 'START_LOAD':
-      forNodeAtPath(newState, action.payload.path, n => {
+      forNodeAtPath(newState, action.payload.path, (n) => {
         n.nodeData = n.nodeData || {};
         n.nodeData.audioFile = action.payload.audioFile;
         n.nodeData.isLoading = true;
@@ -129,7 +133,7 @@ function treeReducer(
       return newState;
 
     case 'FINISH_LOAD':
-      forNodeAtPath(newState, action.payload.path, n => {
+      forNodeAtPath(newState, action.payload.path, (n) => {
         if (n.nodeData) n.nodeData.isLoading = false;
         n.icon = action.payload.success ? 'music' : 'error';
       });
@@ -142,7 +146,7 @@ function treeReducer(
 
 function jsonToTreeNodes(json: any): TreeNodeInfo<NodeData> {
   if (json.children) {
-    const isRoot = json.name.toLowerCase() === 'library';
+    const isRoot = typeof json.name === 'string' && json.name.toLowerCase() === 'library';
     return {
       id: json.path,
       label: json.name,
@@ -153,13 +157,20 @@ function jsonToTreeNodes(json: any): TreeNodeInfo<NodeData> {
     };
   }
 
-  const prefix = process.env.PUBLIC_URL || '';
-  const raw = `${prefix}/${json.path}`.replace(/\/+/g, '/');
+  // file node
   const lower = (json.name || '').toLowerCase();
   const isMidi = lower.endsWith('.mid') || lower.endsWith('.midi');
 
+  let urlStr = json.path;
+  try {
+    // try to resolve to absolute if needed
+    urlStr = new URL(json.path, document.baseURI).toString();
+  } catch {
+    // fallback, leave as-is
+  }
+
   return {
-    id: raw,
+    id: urlStr,
     label: json.name,
     isExpanded: false,
     icon: isMidi ? 'document' : 'music',
@@ -167,35 +178,90 @@ function jsonToTreeNodes(json: any): TreeNodeInfo<NodeData> {
   };
 }
 
-export const Browser: FunctionComponent<BrowserProps> = props => {
+function makeAbsoluteUrl(id: string): URL {
+  try {
+    return new URL(id);
+  } catch {
+    return new URL(id, document.baseURI);
+  }
+}
+
+function buildLibraryUrlCandidates(): string[] {
+  const set = new Set<string>();
+  // relative via base URI (covers both / and any subpath)
+  set.add(new URL(LIBRARY_JSON, document.baseURI).toString());
+
+  if (process.env.PUBLIC_URL) {
+    let pub = process.env.PUBLIC_URL;
+    if (!pub.endsWith('/')) pub += '/';
+    try {
+      set.add(new URL(LIBRARY_JSON, `${window.location.origin}${pub}`).toString());
+    } catch {}
+  }
+
+  // absolute fallback
+  set.add(`${window.location.origin}/${LIBRARY_JSON}`);
+
+  return Array.from(set);
+}
+
+export const Browser: FunctionComponent<BrowserProps> = (props) => {
   const audioContext = useContext(AudioContextContext)!;
   const [nodes, dispatch] = useReducer(treeReducer, []);
 
-  const treeRef = useRef<Tree<NodeData>>(null);
-  const dragLabel = useRef<HTMLDivElement>(null);
+  const treeRef = useRef<Tree<NodeData> | null>(null);
+  const dragLabel = useRef<HTMLDivElement | null>(null);
   const dragLabelText = useRef<string>('');
   const currentTreeNode = useRef<TreeNodeInfo<NodeData> | null>(null);
   const startDragTimeout = useRef<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef(0);
+  const dragStartY = useRef(0);
 
-  // ─── FETCH library.json ─────────────────────────────────────────────────────
+  // ─── LIBRARY.JSON FETCH WITH FALLBACKS AND HTML DETECTION ───────────────────
   useEffect(() => {
-    const libUrl = `${process.env.PUBLIC_URL || ''}/${LIBRARY_JSON}`.replace(/\/+/g, '/');
-    console.log('Fetching library.json at', libUrl);
+    const candidates = buildLibraryUrlCandidates();
+    let didSucceed = false;
 
-    fetch(libUrl)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(json =>
-        dispatch({
-          type: 'RELOAD_TREE_NODES',
-          payload: { nodes: [jsonToTreeNodes(json)] },
-        })
-      )
-      .catch(err => {
-        console.error('Failed to load library.json', err);
+    const tryFetch = async () => {
+      for (const url of candidates) {
+        try {
+          console.log('Attempting to fetch library.json from:', url);
+          const res = await fetch(url, { cache: 'no-cache' });
+          if (!res.ok) {
+            console.warn('Non-ok response for', url, res.status);
+            continue;
+          }
+
+          const contentType = res.headers.get('content-type') || '';
+          const text = await res.text();
+
+          // Heuristic: if we got HTML (index fallback), skip and try next
+          const trimmed = text.trim();
+          if (
+            trimmed.startsWith('<!doctype') ||
+            trimmed.startsWith('<!DOCTYPE') ||
+            contentType.includes('text/html')
+          ) {
+            console.warn('Received HTML instead of JSON from', url);
+            continue;
+          }
+
+          const json = JSON.parse(text);
+          dispatch({
+            type: 'RELOAD_TREE_NODES',
+            payload: { nodes: [jsonToTreeNodes(json)] },
+          });
+          didSucceed = true;
+          return;
+        } catch (e) {
+          console.warn('Failed to fetch/parse from', url, e);
+          // try next
+        }
+      }
+
+      if (!didSucceed) {
+        console.error('All attempts to load library.json failed');
         dispatch({
           type: 'RELOAD_TREE_NODES',
           payload: {
@@ -210,24 +276,34 @@ export const Browser: FunctionComponent<BrowserProps> = props => {
             ],
           },
         });
-      });
+      }
+    };
+
+    tryFetch();
   }, []);
 
-  // ─── DRAG HANDLERS ────────────────────────────────────────────────────────────
+  // ─── DRAG HANDLERS ─────────────────────────────────────────────────────────
   const onStartDrag = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       setIsDragging(true);
       e.preventDefault();
-      dragLabel.current!.style.display = 'block';
-      dragLabel.current!.style.left = `${e.clientX}px`;
-      dragLabel.current!.style.top = `${e.clientY}px`;
+      dragStartX.current = e.clientX;
+      dragStartY.current = e.clientY;
+      (e.target as Element).setPointerCapture(e.pointerId);
 
-      const ph = document.getElementById(REGION_PLACEHOLDER_ID)!;
-      if (currentTreeNode.current!.nodeData!.isMidi) {
-        ph.style.width = '120px';
-      } else {
-        const dur = currentTreeNode.current!.nodeData!.audioFile!.buffer.duration;
-        ph.style.width = `${dur * props.scale * TIMELINE_FACTOR_PX}px`;
+      if (dragLabel.current) {
+        const lbl = dragLabel.current;
+        lbl.style.display = 'block';
+        lbl.style.left = `${e.clientX}px`;
+        lbl.style.top = `${e.clientY}px`;
+      }
+
+      const placeholder = document.getElementById(REGION_PLACEHOLDER_ID)!;
+      if (currentTreeNode.current?.nodeData?.isMidi) {
+        placeholder.style.width = '120px';
+      } else if (currentTreeNode.current?.nodeData?.audioFile) {
+        const dur = currentTreeNode.current.nodeData.audioFile!.buffer.duration;
+        placeholder.style.width = `${dur * props.scale * TIMELINE_FACTOR_PX}px`;
       }
     },
     [props.scale]
@@ -235,7 +311,14 @@ export const Browser: FunctionComponent<BrowserProps> = props => {
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!isDragging && currentTreeNode.current && canDrag(currentTreeNode.current)) {
+      if (
+        !isDragging &&
+        currentTreeNode.current !== null &&
+        canDrag(currentTreeNode.current)
+      ) {
+        if (startDragTimeout.current !== null) {
+          window.clearTimeout(startDragTimeout.current);
+        }
         startDragTimeout.current = window.setTimeout(
           () => onStartDrag(e),
           CLICK_TO_DRAG_TIMEOUT_MS
@@ -247,9 +330,32 @@ export const Browser: FunctionComponent<BrowserProps> = props => {
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (isDragging) {
-        dragLabel.current!.style.left = `${e.clientX}px`;
-        dragLabel.current!.style.top = `${e.clientY}px`;
+      if (isDragging && dragLabel.current) {
+        const lbl = dragLabel.current;
+        lbl.style.left = `${e.clientX}px`;
+        lbl.style.top = `${e.clientY}px`;
+
+        const regionScrollView = document.getElementById(REGION_SCROLL_VIEW_ID);
+        const regionPlaceholder = document.getElementById(REGION_PLACEHOLDER_ID);
+        if (!regionScrollView || !regionPlaceholder) return;
+        const scrollViewRect = regionScrollView.getBoundingClientRect();
+
+        if (
+          e.clientX >= scrollViewRect.left &&
+          e.clientX <= scrollViewRect.right &&
+          e.clientY >= scrollViewRect.top &&
+          e.clientY <= scrollViewRect.bottom
+        ) {
+          regionPlaceholder.style.display = 'block';
+          regionPlaceholder.style.left = `${
+            e.clientX - scrollViewRect.left + regionScrollView.scrollLeft - 2
+          }px`;
+          regionPlaceholder.style.top = `${
+            e.clientY - scrollViewRect.top + regionScrollView.scrollTop - 2
+          }px`;
+        } else {
+          regionPlaceholder.style.display = 'none';
+        }
       }
     },
     [isDragging]
@@ -257,41 +363,44 @@ export const Browser: FunctionComponent<BrowserProps> = props => {
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (startDragTimeout.current) {
-        clearTimeout(startDragTimeout.current);
+      if (startDragTimeout.current !== null) {
+        window.clearTimeout(startDragTimeout.current);
         startDragTimeout.current = null;
       }
+
       if (isDragging) {
         setIsDragging(false);
-        dragLabel.current!.style.display = 'none';
-        document.getElementById(REGION_PLACEHOLDER_ID)!.style.display = 'none';
+        (e.target as Element).releasePointerCapture(e.pointerId);
+        if (dragLabel.current) dragLabel.current.style.display = 'none';
+        const regionPlaceholder = document.getElementById(REGION_PLACEHOLDER_ID);
+        if (regionPlaceholder) regionPlaceholder.style.display = 'none';
       }
     },
     [isDragging]
   );
 
-  // ─── TREE EVENTS ─────────────────────────────────────────────────────────────
+  // ─── TREE EVENT HANDLERS ───────────────────────────────────────────────────
   const handleNodeMouseEnter = useCallback(
-    (node: TreeNodeInfo<NodeData>) => {
+    (node: TreeNodeInfo<NodeData>, _path: NodePath) => {
       currentTreeNode.current = node;
       dragLabelText.current = node.label as string;
-      if (canDrag(node)) {
-        treeRef.current!
-          .getNodeContentElement(node.id as string)!
-          .classList.add(styles.canDrag);
+      if (canDrag(node) && treeRef.current) {
+        const elm = treeRef.current.getNodeContentElement(node.id as string);
+        elm?.classList.add(styles.canDrag);
       }
     },
     []
   );
 
   const handleNodeMouseLeave = useCallback(
-    (node: TreeNodeInfo<NodeData>) => {
-      treeRef.current!
-        .getNodeContentElement(node.id as string)!
-        .classList.remove(styles.canDrag);
+    (node: TreeNodeInfo<NodeData>, _path: NodePath) => {
+      if (treeRef.current) {
+        const elm = treeRef.current.getNodeContentElement(node.id as string);
+        elm?.classList.remove(styles.canDrag);
+      }
       currentTreeNode.current = null;
-      if (startDragTimeout.current) {
-        clearTimeout(startDragTimeout.current);
+      if (startDragTimeout.current !== null) {
+        window.clearTimeout(startDragTimeout.current);
         startDragTimeout.current = null;
       }
     },
@@ -323,9 +432,10 @@ export const Browser: FunctionComponent<BrowserProps> = props => {
         !node.nodeData.isLoading &&
         !node.nodeData.audioFile
       ) {
-        const f = AudioFile.create(new URL(String(node.id), document.baseURI));
-        dispatch({ type: 'START_LOAD', payload: { path, audioFile: f } });
-        f.load(
+        const url = makeAbsoluteUrl(node.id as string);
+        const file = AudioFile.create(url);
+        dispatch({ type: 'START_LOAD', payload: { path, audioFile: file } });
+        file.load(
           audioContext,
           () => dispatch({ type: 'FINISH_LOAD', payload: { path, success: true } }),
           () => dispatch({ type: 'FINISH_LOAD', payload: { path, success: false } })
@@ -344,7 +454,10 @@ export const Browser: FunctionComponent<BrowserProps> = props => {
       onPointerUp={onPointerUp}
     >
       <Tree
-        ref={treeRef}
+        ref={(r) => {
+          // blueprint's Tree typing is a bit weird; cast to any for set/get
+          (treeRef as any).current = r;
+        }}
         contents={nodes}
         onNodeClick={handleNodeClick}
         onNodeCollapse={handleNodeCollapse}
@@ -353,9 +466,11 @@ export const Browser: FunctionComponent<BrowserProps> = props => {
         onNodeMouseLeave={handleNodeMouseLeave}
       />
       <div
-        ref={dragLabel}
+        ref={(el) => {
+          if (el) dragLabel.current = el;
+        }}
         className={`${styles.dragLabel} ${styles.noselect}`}
-        style={{ display: 'none', top: 0, left: 0 }}
+        style={{ top: 0, left: 0, display: 'none' }}
       >
         <Icon icon="music" /> {dragLabelText.current}
       </div>
