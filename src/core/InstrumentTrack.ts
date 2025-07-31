@@ -1,6 +1,16 @@
+// src/core/InstrumentTrack.ts  (or wherever this lives)
+
 import { AudioEffect } from './AudioEffect';
 import { AudioFileResolver } from './AudioFile';
-import { JSONObject, JSONValue, Location, LocationToTime, assert, Duration, TimeSignature } from './Common';
+import {
+  JSONObject,
+  JSONValue,
+  Location,
+  LocationToTime,
+  assert,
+  Duration,
+  TimeSignature,
+} from './Common';
 import { Instrument } from './Instrument';
 import { MidiDataType, NoteMidiData } from './MidiData';
 import { MidiEffect } from './MidiEffect';
@@ -14,47 +24,38 @@ type AudioState = {
 };
 
 /**
+ * A minimal no-op fallback instrument used when deserializing without a real instrument.
+ * **Replace this** with your real instrument resolution logic (e.g., lookup by name or type).
+ */
+const createFallbackInstrument = (): Instrument =>
+  ({
+    // @ts-ignore stub implementations; shape assumed based on usage
+    initialize: async (_context: AudioContext) => {},
+    connect: (_node: AudioNode) => {},
+    disconnect: () => {},
+    noteOn: (_note: number, _velocity: number, _time: number) => {},
+    noteOff: (_note: number, _time: number) => {},
+    stopAll: () => {},
+  } as unknown as Instrument);
+
+/**
  * An InstrumentTrack is a track that contains MIDI regions, which represent fragments of MIDI
  * that are to be rendered as audio by a built-in instrument or audio module.
  */
 export class InstrumentTrack extends AbstractTrack {
-  /**
-   * The MIDI regions contained in this track. Regions are sorted by their start time, so that
-   * they can be played back in order.
-   */
   regions: MidiRegion[] = [];
-
-  /**
-   * The MIDI effects that are applied to the MIDI regions in this track. They are ordered by
-   * their position in the MIDI chain.
-   */
   midiEffects: MidiEffect[] = [];
-
-  /**
-   * The instrument that is used to render the MIDI regions in this track to audio.
-   * The instrument is receiving the MIDI data from the MIDI regions in this track after
-   * processing by the MIDI effects.
-   */
   instrument: Instrument;
-
-  /**
-   * The audio effects that are applied to the audio regions in this track. They are ordered by
-   * their position in the audio chain.
-   */
   audioEffects: AudioEffect[] = [];
-
-  /**
-   * The audio state of this track. This is used to keep track of the audio nodes that are
-   * used for rendering within an audio context.
-   */
   audioState: AudioState | null = null;
 
   private _volume: number = 0;
+  private _pan: number = 0;
+  private _enabled: boolean = true;
+  private _scheduleContinuation: boolean = false;
 
   set volume(value: number) {
-    if (value === undefined) {
-      return;
-    }
+    if (value === undefined) return;
     this._volume = value;
     if (this.audioState !== null) {
       this.audioState.gain.gain.value = this.gainFromVolume;
@@ -65,12 +66,8 @@ export class InstrumentTrack extends AbstractTrack {
     return this._volume;
   }
 
-  private _pan: number = 0;
-
   set pan(value: number) {
-    if (value === undefined) {
-      return;
-    }
+    if (value === undefined) return;
     this._pan = value;
     if (this.audioState !== null) {
       this.audioState.panner.pan.value = value;
@@ -81,17 +78,12 @@ export class InstrumentTrack extends AbstractTrack {
     return this._pan;
   }
 
-  private _enabled: boolean = true;
-  private _scheduleContinuation: boolean = false;
-
   public get enabled(): boolean {
     return this._enabled;
   }
 
   public set enabled(value: boolean) {
-    if (value === undefined || value === this._enabled) {
-      return;
-    }
+    if (value === undefined || value === this._enabled) return;
     this._enabled = value;
     if (this.audioState !== null) {
       this.audioState.channelStripInput.gain.value = value ? 1 : 0;
@@ -116,8 +108,15 @@ export class InstrumentTrack extends AbstractTrack {
       const gain = context.createGain();
       const panner = context.createStereoPanner();
 
-      await this.instrument.initialize(context);
-      this.instrument.connect(channelStripInput);
+      if (typeof this.instrument.initialize === 'function') {
+        await this.instrument.initialize(context);
+      } else {
+        console.warn('Instrument missing initialize(), continuing with fallback behavior.');
+      }
+
+      if (typeof this.instrument.connect === 'function') {
+        this.instrument.connect(channelStripInput);
+      }
 
       channelStripInput.connect(panner);
       panner.connect(gain);
@@ -131,14 +130,16 @@ export class InstrumentTrack extends AbstractTrack {
     } else {
       assert(
         this.audioState.gain.context === context,
-        'Audio nodes already initialized with a different audio context',
+        'Audio nodes already initialized with a different audio context'
       );
     }
   }
 
   deinitializeAudio(): void {
     if (this.audioState !== null) {
-      this.instrument.disconnect();
+      if (typeof this.instrument.disconnect === 'function') {
+        this.instrument.disconnect();
+      }
       this.audioState.gain.disconnect();
       this.audioState.panner.disconnect();
       this.audioState.channelStripInput.disconnect();
@@ -152,7 +153,7 @@ export class InstrumentTrack extends AbstractTrack {
     return this.audioState !== null;
   }
 
-  // Support for JSON serialization/deserialization
+  // JSON serialization/deserialization support
   public static TYPE_TAG = 'instrument';
 
   get type(): string {
@@ -160,16 +161,28 @@ export class InstrumentTrack extends AbstractTrack {
   }
 
   static fromJson(file: JSONValue, resolver: AudioFileResolver): InstrumentTrack {
-    if (typeof file !== 'object') {
+    if (typeof file !== 'object' || file === null) {
       throw new Error('Invalid JSON value for InstrumentTrack');
     }
 
     const obj = file as JSONObject;
+
+    // Example: if your JSON includes an "instrument" field (e.g., a name or type), resolve it here.
+    // Fallback to a no-op instrument so we don't crash.
+    let instrument: Instrument;
+    if (typeof obj['instrument'] === 'string') {
+      // Replace this with your real resolution logic, e.g.:
+      // instrument = resolver.getInstrumentByName(obj['instrument'] as string);
+      instrument = createFallbackInstrument();
+    } else {
+      instrument = createFallbackInstrument();
+    }
+
     return new InstrumentTrack(
       obj['name'] as string,
       obj['color'] as string,
       obj['muted'] as boolean,
-      {} as Instrument,
+      instrument
     );
   }
 
@@ -177,34 +190,35 @@ export class InstrumentTrack extends AbstractTrack {
     AbstractTrack.registerFactory(InstrumentTrack.TYPE_TAG, InstrumentTrack.fromJson);
   }
 
-  public splitRegion(regionIndex: number, splitLocation: Location, timeSignature: TimeSignature, converter: LocationToTime): void {
+  public splitRegion(
+    regionIndex: number,
+    splitLocation: Location,
+    timeSignature: TimeSignature,
+    converter: LocationToTime
+  ): void {
     const originalRegion = this.regions[regionIndex];
     if (!originalRegion) return;
 
-    // Calculate the duration of the first part
     const firstPartDuration = originalRegion.position.diff(splitLocation, timeSignature);
-
-    // Calculate the duration of the second part
     const originalRegionEnd = originalRegion.position.add(originalRegion.length, timeSignature);
     const secondPartDuration = splitLocation.diff(originalRegionEnd, timeSignature);
 
-    // Ensure split point is valid (within the region and not at its start/end)
-    if (firstPartDuration.compare(new Duration(0,0,0)) <= 0 || secondPartDuration.compare(new Duration(0,0,0)) <= 0) {
-      console.warn("Split location is at or outside region boundaries. No split performed.");
+    if (
+      firstPartDuration.compare(new Duration(0, 0, 0)) <= 0 ||
+      secondPartDuration.compare(new Duration(0, 0, 0)) <= 0
+    ) {
+      console.warn('Split location is at or outside region boundaries. No split performed.');
       return;
     }
 
-    // Filter MIDI data for the first part
-    const firstPartMidiData = originalRegion.midiData.filter(midiEvent => {
+    const firstPartMidiData = originalRegion.midiData.filter((midiEvent) => {
       return midiEvent.start.compare(splitLocation) < 0;
     });
 
-    // Filter MIDI data for the second part
-    const secondPartMidiData = originalRegion.midiData.filter(midiEvent => {
+    const secondPartMidiData = originalRegion.midiData.filter((midiEvent) => {
       return midiEvent.start.compare(splitLocation) >= 0;
     });
 
-    // Create the first new region
     const firstRegion = new MidiRegion(
       firstPartMidiData,
       originalRegion.name,
@@ -218,34 +232,37 @@ export class InstrumentTrack extends AbstractTrack {
       originalRegion.startLocation
     );
 
-    // Create the second new region
     const secondRegion = new MidiRegion(
       secondPartMidiData,
       originalRegion.name,
       originalRegion.color,
-      splitLocation, // New position
+      splitLocation,
       secondPartDuration,
       secondPartDuration,
       originalRegion.looping,
       originalRegion.muted,
       originalRegion.soloed,
-      originalRegion.startLocation // startLocation remains the same as it's an absolute reference
+      originalRegion.startLocation
     );
 
-    // Replace the original region with the two new ones
     this.regions.splice(regionIndex, 1, firstRegion, secondRegion);
-    this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
+    this.regions.sort((a, b) => a.position.compare(b.position));
   }
 
-  public duplicateRegion(regionIndex: number, targetLocation: Location, timeSignature: TimeSignature, converter: LocationToTime): void {
+  public duplicateRegion(
+    regionIndex: number,
+    targetLocation: Location,
+    timeSignature: TimeSignature,
+    converter: LocationToTime
+  ): void {
     const originalRegion = this.regions[regionIndex];
     if (!originalRegion) return;
 
     const duplicatedRegion = new MidiRegion(
-      originalRegion.midiData, // Share MIDI data reference for now, deep copy if needed later
+      originalRegion.midiData,
       originalRegion.name,
       originalRegion.color,
-      targetLocation, // New position
+      targetLocation,
       originalRegion.size,
       originalRegion.length,
       originalRegion.looping,
@@ -255,14 +272,13 @@ export class InstrumentTrack extends AbstractTrack {
     );
 
     this.regions.push(duplicatedRegion);
-    this.regions.sort((a, b) => a.position.compare(b.position)); // Re-sort to maintain order
+    this.regions.sort((a, b) => a.position.compare(b.position));
   }
 
   public deleteRegion(regionIndex: number): void {
     this.regions.splice(regionIndex, 1);
   }
 
-  // Playback support
   scheduleAudioEvents(
     timeOffset: number,
     startTime: number,
@@ -270,9 +286,9 @@ export class InstrumentTrack extends AbstractTrack {
     converter: LocationToTime,
     loopIteration: number,
     continuationTime?: number,
-    discontinuationTime?: number,
+    discontinuationTime?: number
   ): void {
-    // Instrument tracks schedule MIDI which generates audio, so this is empty.
+    // InstrumentTrack schedules via MIDI events, so nothing here.
   }
 
   scheduleMidiEvents(
@@ -282,11 +298,9 @@ export class InstrumentTrack extends AbstractTrack {
     converter: LocationToTime,
     loopIteration: number,
     continuationTime?: number,
-    discontinuationTime?: number,
+    discontinuationTime?: number
   ): void {
-    if (!this.enabled || !this.isAudioInitialized()) {
-      return;
-    }
+    if (!this.enabled || !this.isAudioInitialized()) return;
 
     this.regions.forEach((region) => {
       region.midiData.forEach((midiEvent) => {
@@ -294,12 +308,17 @@ export class InstrumentTrack extends AbstractTrack {
           const note = midiEvent as NoteMidiData;
           const noteStartTime = converter.convertLocation(note.start);
           const timeSignature = converter.timeSignatureAtLocation(note.start);
-          const noteEndTime = converter.convertLocation(note.start.add(note.duration, timeSignature));
+          const noteEndTime = converter.convertLocation(
+            note.start.add(note.duration, timeSignature)
+          );
 
-          // Schedule notes that start within the current scheduling window
           if (noteStartTime >= startTime && noteStartTime < endTime) {
-            this.instrument.noteOn(note.note, note.velocity, timeOffset + noteStartTime);
-            this.instrument.noteOff(note.note, timeOffset + noteEndTime);
+            if (typeof this.instrument.noteOn === 'function') {
+              this.instrument.noteOn(note.note, note.velocity, timeOffset + noteStartTime);
+            }
+            if (typeof this.instrument.noteOff === 'function') {
+              this.instrument.noteOff(note.note, timeOffset + noteEndTime);
+            }
           }
         }
       });
@@ -311,12 +330,14 @@ export class InstrumentTrack extends AbstractTrack {
     oldDiscontinuationTime: number,
     newDiscontinuationTime: number,
     converter: LocationToTime,
-    loopIteration: number,
+    loopIteration: number
   ): void {}
 
   housekeeping(currentTime: number): void {}
 
   stop(): void {
-    this.instrument.stopAll();
+    if (typeof this.instrument.stopAll === 'function') {
+      this.instrument.stopAll();
+    }
   }
 }

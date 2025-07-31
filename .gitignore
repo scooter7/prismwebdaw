@@ -1,19 +1,20 @@
 # dependencies
-/node_modules
+/node_modules/
 /.pnp
 .pnp.js
 
 # testing and build output
-/coverage
-/build
+/coverage/
+/build/
 
 # generated documentation
-/docs
+/docs/
 
 # credentials
 google-drive-credentials.json
 
 # environment overrides (local only)
+.env
 .env.local
 .env.development.local
 .env.test.local
