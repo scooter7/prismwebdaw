@@ -21,7 +21,6 @@ import {
   CLICK_TO_DRAG_TIMEOUT_MS,
   LIBRARY_JSON,
   REGION_PLACEHOLDER_ID,
-  REGION_SCROLL_VIEW_ID,
   TIMELINE_FACTOR_PX,
   TRACK_HEIGHT_PX,
 } from './Config';
@@ -89,8 +88,10 @@ function forNodeAtPath(
   path: NodePath,
   fn: (node: TreeNodeInfo<NodeData>) => void
 ) {
-  const node = (Tree as any).nodeFromPath(path, nodes) as TreeNodeInfo<NodeData> | null; // blueprint's internal
-  if (node) fn(node);
+  const target = (Tree as any).nodeFromPath(path, nodes) as TreeNodeInfo<NodeData> | undefined;
+  if (target) {
+    fn(target);
+  }
 }
 
 function treeReducer(
@@ -125,7 +126,7 @@ function treeReducer(
 
     case 'START_LOAD':
       forNodeAtPath(newState, action.payload.path, (n) => {
-        n.nodeData = n.nodeData || {};
+        if (!n.nodeData) n.nodeData = {};
         n.nodeData.audioFile = action.payload.audioFile;
         n.nodeData.isLoading = true;
         n.icon = <Spinner size={16} />;
@@ -146,7 +147,7 @@ function treeReducer(
 
 function jsonToTreeNodes(json: any): TreeNodeInfo<NodeData> {
   if (json.children) {
-    const isRoot = typeof json.name === 'string' && json.name.toLowerCase() === 'library';
+    const isRoot = String(json.name).toLowerCase() === 'library';
     return {
       id: json.path,
       label: json.name,
@@ -157,16 +158,16 @@ function jsonToTreeNodes(json: any): TreeNodeInfo<NodeData> {
     };
   }
 
-  // file node
   const lower = (json.name || '').toLowerCase();
   const isMidi = lower.endsWith('.mid') || lower.endsWith('.midi');
 
+  // Build URL-safe path for file nodes.
   let urlStr = json.path;
   try {
-    // try to resolve to absolute if needed
-    urlStr = new URL(json.path, document.baseURI).toString();
+    // If PUBLIC_URL is set, it may affect resolving in production; use document.baseURI to resolve relative.
+    urlStr = new URL(String(json.path), document.baseURI).toString();
   } catch {
-    // fallback, leave as-is
+    // fallback: leave as-is
   }
 
   return {
@@ -176,33 +177,6 @@ function jsonToTreeNodes(json: any): TreeNodeInfo<NodeData> {
     icon: isMidi ? 'document' : 'music',
     nodeData: { isMidi, isLoading: false },
   };
-}
-
-function makeAbsoluteUrl(id: string): URL {
-  try {
-    return new URL(id);
-  } catch {
-    return new URL(id, document.baseURI);
-  }
-}
-
-function buildLibraryUrlCandidates(): string[] {
-  const set = new Set<string>();
-  // relative via base URI (covers both / and any subpath)
-  set.add(new URL(LIBRARY_JSON, document.baseURI).toString());
-
-  if (process.env.PUBLIC_URL) {
-    let pub = process.env.PUBLIC_URL;
-    if (!pub.endsWith('/')) pub += '/';
-    try {
-      set.add(new URL(LIBRARY_JSON, `${window.location.origin}${pub}`).toString());
-    } catch {}
-  }
-
-  // absolute fallback
-  set.add(`${window.location.origin}/${LIBRARY_JSON}`);
-
-  return Array.from(set);
 }
 
 export const Browser: FunctionComponent<BrowserProps> = (props) => {
@@ -218,71 +192,64 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
   const dragStartX = useRef(0);
   const dragStartY = useRef(0);
 
-  // ─── LIBRARY.JSON FETCH WITH FALLBACKS AND HTML DETECTION ───────────────────
+  // ─── FETCH library.json with fallback candidates ───────────────────────────────
   useEffect(() => {
-    const candidates = buildLibraryUrlCandidates();
-    let didSucceed = false;
+    const sanitize = (s: string) => s.replace(/\/+$/g, '');
+    const pub = sanitize(process.env.PUBLIC_URL || '');
+    const candidates: string[] = [];
 
-    const tryFetch = async () => {
-      for (const url of candidates) {
+    if (pub) {
+      candidates.push(`${pub}/${LIBRARY_JSON}`.replace(/\/{2,}/g, '/'));
+    }
+    candidates.push(`/${LIBRARY_JSON}`);
+    candidates.push(LIBRARY_JSON);
+
+    const fetchLibrary = async () => {
+      let lastErr: unknown = null;
+      for (const candidate of candidates) {
         try {
-          console.log('Attempting to fetch library.json from:', url);
-          const res = await fetch(url, { cache: 'no-cache' });
-          if (!res.ok) {
-            console.warn('Non-ok response for', url, res.status);
-            continue;
-          }
-
-          const contentType = res.headers.get('content-type') || '';
+          console.log('Attempting to fetch library from:', candidate);
+          const res = await fetch(candidate);
+          console.log(`Response status for ${candidate}:`, res.status);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const text = await res.text();
-
-          // Heuristic: if we got HTML (index fallback), skip and try next
-          const trimmed = text.trim();
-          if (
-            trimmed.startsWith('<!doctype') ||
-            trimmed.startsWith('<!DOCTYPE') ||
-            contentType.includes('text/html')
-          ) {
-            console.warn('Received HTML instead of JSON from', url);
+          if (text.trim().toLowerCase().startsWith('<!doctype')) {
+            console.warn(`Received HTML from ${candidate}, trying next candidate.`);
             continue;
           }
-
           const json = JSON.parse(text);
           dispatch({
             type: 'RELOAD_TREE_NODES',
             payload: { nodes: [jsonToTreeNodes(json)] },
           });
-          didSucceed = true;
           return;
         } catch (e) {
-          console.warn('Failed to fetch/parse from', url, e);
-          // try next
+          console.warn(`Failed to fetch/parse from ${candidate}:`, e);
+          lastErr = e;
         }
       }
 
-      if (!didSucceed) {
-        console.error('All attempts to load library.json failed');
-        dispatch({
-          type: 'RELOAD_TREE_NODES',
-          payload: {
-            nodes: [
-              {
-                id: 'error',
-                label: 'Error loading library',
-                isExpanded: false,
-                icon: 'error',
-                nodeData: null,
-              },
-            ],
-          },
-        });
-      }
+      console.error('Failed to load library.json from all candidates:', lastErr);
+      dispatch({
+        type: 'RELOAD_TREE_NODES',
+        payload: {
+          nodes: [
+            {
+              id: 'error',
+              label: 'Error loading library',
+              isExpanded: false,
+              icon: 'error',
+              nodeData: null,
+            },
+          ],
+        },
+      });
     };
 
-    tryFetch();
+    fetchLibrary();
   }, []);
 
-  // ─── DRAG HANDLERS ─────────────────────────────────────────────────────────
+  // ─── DRAG HANDLERS ────────────────────────────────────────────────────────────
   const onStartDrag = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       setIsDragging(true);
@@ -292,18 +259,19 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
       (e.target as Element).setPointerCapture(e.pointerId);
 
       if (dragLabel.current) {
-        const lbl = dragLabel.current;
-        lbl.style.display = 'block';
-        lbl.style.left = `${e.clientX}px`;
-        lbl.style.top = `${e.clientY}px`;
+        dragLabel.current.style.display = 'block';
+        dragLabel.current.style.left = `${e.clientX}px`;
+        dragLabel.current.style.top = `${e.clientY}px`;
       }
 
-      const placeholder = document.getElementById(REGION_PLACEHOLDER_ID)!;
-      if (currentTreeNode.current?.nodeData?.isMidi) {
-        placeholder.style.width = '120px';
-      } else if (currentTreeNode.current?.nodeData?.audioFile) {
-        const dur = currentTreeNode.current.nodeData.audioFile!.buffer.duration;
-        placeholder.style.width = `${dur * props.scale * TIMELINE_FACTOR_PX}px`;
+      const ph = document.getElementById(REGION_PLACEHOLDER_ID);
+      if (ph && currentTreeNode.current) {
+        if (currentTreeNode.current.nodeData?.isMidi) {
+          ph.style.width = '120px';
+        } else if (currentTreeNode.current.nodeData?.audioFile) {
+          const dur = currentTreeNode.current.nodeData.audioFile.buffer.duration;
+          ph.style.width = `${dur * props.scale * TIMELINE_FACTOR_PX}px`;
+        }
       }
     },
     [props.scale]
@@ -311,14 +279,7 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (
-        !isDragging &&
-        currentTreeNode.current !== null &&
-        canDrag(currentTreeNode.current)
-      ) {
-        if (startDragTimeout.current !== null) {
-          window.clearTimeout(startDragTimeout.current);
-        }
+      if (!isDragging && currentTreeNode.current && canDrag(currentTreeNode.current)) {
         startDragTimeout.current = window.setTimeout(
           () => onStartDrag(e),
           CLICK_TO_DRAG_TIMEOUT_MS
@@ -331,30 +292,29 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (isDragging && dragLabel.current) {
-        const lbl = dragLabel.current;
-        lbl.style.left = `${e.clientX}px`;
-        lbl.style.top = `${e.clientY}px`;
+        dragLabel.current.style.left = `${e.clientX}px`;
+        dragLabel.current.style.top = `${e.clientY}px`;
 
-        const regionScrollView = document.getElementById(REGION_SCROLL_VIEW_ID);
+        const regionScrollView = document.getElementById('region-scroll-view');
         const regionPlaceholder = document.getElementById(REGION_PLACEHOLDER_ID);
-        if (!regionScrollView || !regionPlaceholder) return;
-        const scrollViewRect = regionScrollView.getBoundingClientRect();
-
-        if (
-          e.clientX >= scrollViewRect.left &&
-          e.clientX <= scrollViewRect.right &&
-          e.clientY >= scrollViewRect.top &&
-          e.clientY <= scrollViewRect.bottom
-        ) {
-          regionPlaceholder.style.display = 'block';
-          regionPlaceholder.style.left = `${
-            e.clientX - scrollViewRect.left + regionScrollView.scrollLeft - 2
-          }px`;
-          regionPlaceholder.style.top = `${
-            e.clientY - scrollViewRect.top + regionScrollView.scrollTop - 2
-          }px`;
-        } else {
-          regionPlaceholder.style.display = 'none';
+        if (regionScrollView && regionPlaceholder) {
+          const scrollViewRect = regionScrollView.getBoundingClientRect();
+          if (
+            e.clientX >= scrollViewRect.left &&
+            e.clientX <= scrollViewRect.right &&
+            e.clientY >= scrollViewRect.top &&
+            e.clientY <= scrollViewRect.bottom
+          ) {
+            regionPlaceholder.style.display = 'block';
+            regionPlaceholder.style.left = `${
+              e.clientX - scrollViewRect.left + (regionScrollView as any).scrollLeft - 2
+            }px`;
+            regionPlaceholder.style.top = `${
+              e.clientY - scrollViewRect.top + (regionScrollView as any).scrollTop - 2
+            }px`;
+          } else {
+            regionPlaceholder.style.display = 'none';
+          }
         }
       }
     },
@@ -363,29 +323,28 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (startDragTimeout.current !== null) {
+      if (startDragTimeout.current) {
         window.clearTimeout(startDragTimeout.current);
         startDragTimeout.current = null;
       }
-
       if (isDragging) {
         setIsDragging(false);
         (e.target as Element).releasePointerCapture(e.pointerId);
         if (dragLabel.current) dragLabel.current.style.display = 'none';
-        const regionPlaceholder = document.getElementById(REGION_PLACEHOLDER_ID);
-        if (regionPlaceholder) regionPlaceholder.style.display = 'none';
+        const ph = document.getElementById(REGION_PLACEHOLDER_ID);
+        if (ph) ph.style.display = 'none';
       }
     },
     [isDragging]
   );
 
-  // ─── TREE EVENT HANDLERS ───────────────────────────────────────────────────
+  // ─── TREE EVENT HANDLERS ─────────────────────────────────────────────────────
   const handleNodeMouseEnter = useCallback(
     (node: TreeNodeInfo<NodeData>, _path: NodePath) => {
       currentTreeNode.current = node;
-      dragLabelText.current = node.label as string;
-      if (canDrag(node) && treeRef.current) {
-        const elm = treeRef.current.getNodeContentElement(node.id as string);
+      dragLabelText.current = String(node.label);
+      if (canDrag(node)) {
+        const elm = treeRef.current?.getNodeContentElement(node.id as string);
         elm?.classList.add(styles.canDrag);
       }
     },
@@ -394,12 +353,10 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
 
   const handleNodeMouseLeave = useCallback(
     (node: TreeNodeInfo<NodeData>, _path: NodePath) => {
-      if (treeRef.current) {
-        const elm = treeRef.current.getNodeContentElement(node.id as string);
-        elm?.classList.remove(styles.canDrag);
-      }
+      const elm = treeRef.current?.getNodeContentElement(node.id as string);
+      elm?.classList.remove(styles.canDrag);
       currentTreeNode.current = null;
-      if (startDragTimeout.current !== null) {
+      if (startDragTimeout.current) {
         window.clearTimeout(startDragTimeout.current);
         startDragTimeout.current = null;
       }
@@ -424,7 +381,10 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
   const handleNodeClick = useCallback(
     (node: TreeNodeInfo<NodeData>, path: NodePath, e: React.MouseEvent<HTMLElement>) => {
       if (!e.shiftKey) dispatch({ type: 'DESELECT_ALL' });
-      dispatch({ type: 'SET_IS_SELECTED', payload: { path, isSelected: !node.isSelected } });
+      dispatch({
+        type: 'SET_IS_SELECTED',
+        payload: { path, isSelected: !node.isSelected },
+      });
 
       if (
         !node.nodeData?.isMidi &&
@@ -432,8 +392,10 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
         !node.nodeData.isLoading &&
         !node.nodeData.audioFile
       ) {
-        const url = makeAbsoluteUrl(node.id as string);
-        const file = AudioFile.create(url);
+        // ensure node.id is stringified before passing to URL
+        const nodeIdStr = String(node.id);
+        const fileUrl = new URL(nodeIdStr, document.baseURI);
+        const file = AudioFile.create(fileUrl);
         dispatch({ type: 'START_LOAD', payload: { path, audioFile: file } });
         file.load(
           audioContext,
@@ -454,9 +416,9 @@ export const Browser: FunctionComponent<BrowserProps> = (props) => {
       onPointerUp={onPointerUp}
     >
       <Tree
-        ref={(r) => {
-          // blueprint's Tree typing is a bit weird; cast to any for set/get
-          (treeRef as any).current = r;
+        ref={(ref) => {
+          // Blueprint's Tree generic typing isn't always inferred; cast for usage
+          treeRef.current = ref as unknown as Tree<NodeData>;
         }}
         contents={nodes}
         onNodeClick={handleNodeClick}
