@@ -1,30 +1,32 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
 .pnp.js
 
-# testing
+# testing and build output
 /coverage
+/build
 
 # generated documentation
 /docs
 
-# production
-/build
-
 # credentials
 google-drive-credentials.json
 
-# misc
-.vscode
-.DS_Store
+# environment overrides (local only)
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# OS / editor / misc
+.vscode/
+.DS_Store
+
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Optional: if you want library.json to be generated locally and NOT committed, uncomment:
+# /public/library.json
